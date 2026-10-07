@@ -1,0 +1,10 @@
+{
+  "name": "referdue-prototype",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "serve": "python3 -m http.server 4173"
+  }
+}
