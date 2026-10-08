@@ -6,9 +6,9 @@ This file tracks the sequential three-phase build automation. The Idea Vault is 
 - Name: ReferDue
 - Source: Notion page “2026-10-07 — ReferDue”
 - Folder: `projects/referdue/`
-- Phase 1: Complete (browser prototype, core tests pass; committed to this repository)
-- Next: Phase 2 — referral statuses, commission ledger, duplicate warnings, and a referrer view.
-- Phase 3: end-to-end verification, refinement, setup/preservation documentation, and a clear list of any sensitive steps Vishwa must perform manually.
+- Phase 1: Complete (browser prototype; core tests passed; committed to this repository).
+- Phase 2: Complete on 2026-10-08. Added deal statuses, duplicate warnings, a local commission ledger with partial payments, and a referrer filter preview. Eight core tests pass. Referrer filtering is not access control.
+- Next: Phase 3 — review the full demo, refine it, finish setup and preservation documentation, and list sensitive steps for Vishwa to do manually.
 - Do not start another project until Phase 3 is complete.
 
 ## After ReferDue
