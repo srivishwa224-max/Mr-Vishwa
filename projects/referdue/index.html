@@ -79,6 +79,10 @@
                   <label>Prospect contact<input name="prospect" autocomplete="off" placeholder="Name or contact reference" required /></label>
                   <label>Service or deal<input name="service" autocomplete="off" placeholder="e.g. Website redesign" required /></label>
                 </div>
+                <div class="form-row">
+                  <label>Prospect email <span class="optional-label">Optional · used for duplicate warnings</span><input name="email" type="email" autocomplete="off" placeholder="name@example.com" /></label>
+                  <label>Prospect phone <span class="optional-label">Optional</span><input name="phone" type="tel" autocomplete="off" placeholder="+91 98765 43210" /></label>
+                </div>
 
                 <div class="form-section-title section-spaced"><span>02</span> Commission terms</div>
                 <div class="form-row amount-row">
@@ -94,6 +98,7 @@
                 <label class="agreement-check"><input name="termsAgreed" type="checkbox" /><span><strong>Both sides have agreed to these terms</strong><small>Leave unchecked if the partner still needs to confirm.</small></span></label>
                 <label class="notes-label">Notes <span>Optional</span><textarea name="notes" rows="2" placeholder="Add any detail you both want recorded"></textarea></label>
                 <div class="form-error" id="form-error" role="alert" aria-live="polite"></div>
+                <div class="duplicate-warning" id="duplicate-warning" role="alert" aria-live="polite" hidden></div>
                 <div class="form-actions"><button class="button button-primary" type="submit">Save referral</button><button class="button button-quiet" type="reset">Clear form</button></div>
               </form>
             </section>
@@ -118,17 +123,17 @@
           </section>
 
           <section class="panel referrals-panel" id="referrals">
-            <div class="panel-heading referrals-heading"><div><p class="eyebrow">YOUR RECORDS</p><h2>Recent referrals</h2></div><span id="record-count" class="count-chip">0 records</span></div>
+            <div class="panel-heading referrals-heading"><div><p class="eyebrow">YOUR RECORDS</p><h2>Referrals and commission ledger</h2><p class="panel-intro">Filter by referrer to preview their referral-only view. This prototype does not enforce account privacy.</p></div><label class="referrer-filter">Referrer view<select id="referrer-filter"><option value="">All referrers</option></select></label></div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>REFERRAL</th><th>REFERRER</th><th>DEAL VALUE</th><th>COMMISSION</th><th>TERMS</th><th>ADDED</th></tr></thead>
+                <thead><tr><th>REFERRAL</th><th>REFERRER</th><th>EST. VALUE</th><th>EST. COMMISSION</th><th>STATUS</th><th>LEDGER</th><th>ADDED</th><th>ACTIONS</th></tr></thead>
                 <tbody id="referral-rows"></tbody>
               </table>
               <div class="empty-state" id="empty-state"><span class="empty-mark">↗</span><strong>No referrals yet</strong><p>Add your first sample referral to see the shared record here.</p><a href="#new-referral">Register a referral <span>→</span></a></div>
             </div>
           </section>
 
-          <footer class="footer"><span>ReferDue prototype · Phase 1</span><span>Sample data only · Local to this browser</span></footer>
+          <footer class="footer"><span>ReferDue prototype · Phase 2</span><span>Sample data only · Local to this browser</span></footer>
         </div>
       </main>
     </div>
