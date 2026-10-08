@@ -10,7 +10,7 @@ const example = (extra = {}) => ({
   referrer: "Maya",
   company: "Northstar Studio",
   prospect: "A. Person",
-  email: "person@example.com",
+  email: "person.name@example.com",
   phone: "+91 98765 43210",
   service: "Design",
   dealValue: "1200.00",
@@ -41,7 +41,7 @@ test("a valid referral stores terms, normalized contact fields and starting stat
   assert.equal(referral.referrer, "Maya");
   assert.equal(referral.commissionEstimate, 96);
   assert.equal(referral.termsAgreed, true);
-  assert.equal(referral.email, "person@example.com");
+  assert.equal(referral.email, "person.name@example.com");
   assert.equal(referral.status, "Submitted");
   assert.deepEqual(referral.ledger, []);
 });
@@ -49,13 +49,14 @@ test("a valid referral stores terms, normalized contact fields and starting stat
 test("duplicate detection normalizes email, phone, and company name", () => {
   const first = createReferral(example());
   const matches = findPotentialDuplicates({
-    email: " PERSON@example.com ",
+    email: " PERSON.NAME@example.com ",
     phone: "+91 98765 43210",
     company: "northstar-studio",
   }, [first]);
   assert.equal(matches.length, 1);
   assert.deepEqual(matches[0].reasons.sort(), ["company name", "email", "phone"]);
   assert.equal(findPotentialDuplicates({ company: "Different Ltd" }, [first]).length, 0);
+  assert.equal(findPotentialDuplicates({ email: "personname@example.com", company: "Different Ltd" }, [first]).length, 0);
 });
 
 test("revenue and partial commission payments update an auditable ledger", () => {
