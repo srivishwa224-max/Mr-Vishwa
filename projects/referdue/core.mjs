@@ -72,13 +72,13 @@ export function normalizePhone(value) {
 }
 
 export function findPotentialDuplicates(data, referrals) {
-  const email = normalizeIdentity(data.email);
+  const email = String(data.email ?? "").trim().toLocaleLowerCase("en");
   const phone = normalizePhone(data.phone);
   const company = normalizeIdentity(data.company);
   const matches = [];
   for (const referral of referrals) {
     const reasons = [];
-    if (email && normalizeIdentity(referral.email) === email) reasons.push("email");
+    if (email && String(referral.email ?? "").trim().toLocaleLowerCase("en") === email) reasons.push("email");
     if (phone.length >= 7 && normalizePhone(referral.phone) === phone) reasons.push("phone");
     if (company && normalizeIdentity(referral.company) === company) reasons.push("company name");
     if (reasons.length) matches.push({ referral, reasons });
