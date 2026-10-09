@@ -47,6 +47,7 @@
             <p><strong>Prototype data stays in this browser.</strong> Use sample information only. Nothing is sent to a server.</p>
           </div>
 
+          <p id="storage-error" class="form-error" role="alert" hidden></p>
           <section class="stat-grid" aria-label="Referral summary">
             <article class="stat-card">
               <div class="stat-top"><span>Total referrals</span><span class="stat-icon green">↗</span></div>
@@ -58,7 +59,7 @@
             </article>
             <article class="stat-card">
               <div class="stat-top"><span>Terms agreed</span><span class="stat-icon blue">✓</span></div>
-              <strong id="stat-agreed">0</strong><small>Confirmed by both sides</small>
+              <strong id="stat-agreed">0</strong><small>Manually recorded; not verified</small>
             </article>
           </section>
 
@@ -123,7 +124,7 @@
           </section>
 
           <section class="panel referrals-panel" id="referrals">
-            <div class="panel-heading referrals-heading"><div><p class="eyebrow">YOUR RECORDS</p><h2>Referrals and commission ledger</h2><p class="panel-intro">Filter by referrer to preview their referral-only view. This prototype does not enforce account privacy.</p></div><label class="referrer-filter">Referrer view<select id="referrer-filter"><option value="">All referrers</option></select></label></div>
+            <div class="panel-heading referrals-heading"><div><p class="eyebrow">YOUR RECORDS</p><h2>Referrals and commission ledger</h2><span id="record-count">0 records</span><p class="panel-intro">Filter by referrer to preview their referral-only view. This prototype does not enforce account privacy.</p></div><label class="referrer-filter">Referrer view<select id="referrer-filter"><option value="">All referrers</option></select></label></div>
             <div class="table-wrap">
               <table>
                 <thead><tr><th>REFERRAL</th><th>REFERRER</th><th>EST. VALUE</th><th>EST. COMMISSION</th><th>STATUS</th><th>LEDGER</th><th>ADDED</th><th>ACTIONS</th></tr></thead>
@@ -133,7 +134,7 @@
             </div>
           </section>
 
-          <footer class="footer"><span>ReferDue prototype · Phase 2</span><span>Sample data only · Local to this browser</span></footer>
+          <footer class="footer"><span>ReferDue prototype · Review in progress</span><span>Sample data only · Local to this browser</span></footer>
         </div>
       </main>
     </div>
