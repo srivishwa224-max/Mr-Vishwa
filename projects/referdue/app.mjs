@@ -1,5 +1,5 @@
 import {
-  MANUAL_STATUSES, calculateCommission, createReferral, findPotentialDuplicates,
+  MANUAL_STATUSES, commitReferrals, validateReferral, calculateCommission, createReferral, findPotentialDuplicates,
   formatMoney, getCommissionLedger, getDisplayStatus, loadReferrals,
   recordCommissionPayment, recordCustomerRevenue, saveReferrals, setReferralStatus,
 } from "./core.mjs";
@@ -16,7 +16,19 @@ const rateInput = form.elements.commissionValue;
 const typeLabel = document.querySelector("#commission-value-label");
 const filterInput = document.querySelector("#referrer-filter");
 const toast = document.querySelector("#toast");
-let referrals = loadReferrals();
+let referrals = [];
+let storageBlocked = false;
+try { referrals = loadReferrals(); } catch (error) {
+  storageBlocked = true;
+  const alert = document.querySelector("#storage-error");
+  alert.hidden = false;
+  alert.textContent = error.message;
+  for (const control of form.elements) control.disabled = true;
+}
+function commit(next) {
+  if (storageBlocked) throw new Error("Writes are blocked until saved records are recovered.");
+  referrals = commitReferrals(next);
+}
 let toastTimer;
 let allowDuplicate = false;
 
@@ -240,6 +252,7 @@ function showDuplicateWarning(matches) {
   duplicateBox.hidden = false;
 }
 
+form.addEventListener("input", () => { allowDuplicate = false; duplicateBox.hidden = true; });
 typeInput.addEventListener("change", setTypeLabel);
 for (const input of [currencyInput, dealInput, rateInput]) input.addEventListener("input", updateEstimate);
 currencyInput.addEventListener("change", updateEstimate);
@@ -257,6 +270,8 @@ form.addEventListener("submit", event => {
   const data = Object.fromEntries(new FormData(form).entries());
   data.termsAgreed = form.elements.termsAgreed.checked;
   try {
+    const validationError = validateReferral(data);
+    if (validationError) throw new Error(validationError);
     const matches = findPotentialDuplicates(data, referrals);
     if (matches.length && !allowDuplicate) {
       showDuplicateWarning(matches);
@@ -264,8 +279,7 @@ form.addEventListener("submit", event => {
     }
     allowDuplicate = false;
     duplicateBox.hidden = true;
-    referrals = [createReferral(data), ...referrals];
-    saveReferrals(referrals);
+    commit([createReferral(data), ...referrals]);
     render();
     form.reset();
     currencyInput.value = "INR";
@@ -282,8 +296,7 @@ rows.addEventListener("change", event => {
   if (!select) return;
   try {
     const id = select.dataset.statusFor;
-    referrals = referrals.map(item => item.id === id ? setReferralStatus(item, select.value) : item);
-    saveReferrals(referrals);
+    commit(referrals.map(item => item.id === id ? setReferralStatus(item, select.value) : item));
     render();
     showToast("Referral status updated.");
   } catch (error) {
@@ -299,13 +312,12 @@ rows.addEventListener("submit", event => {
   const id = paymentForm.dataset.referralId;
   const amount = new FormData(paymentForm).get("amount");
   try {
-    referrals = referrals.map(item => {
+    commit(referrals.map(item => {
       if (item.id !== id) return item;
       return paymentForm.dataset.ledgerType === "revenue"
         ? recordCustomerRevenue(item, amount)
         : recordCommissionPayment(item, amount);
-    });
-    saveReferrals(referrals);
+    }));
     render();
     showToast("Ledger updated. This records an external payment; it does not move money.");
   } catch (error) {
