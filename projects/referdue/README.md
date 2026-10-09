@@ -39,3 +39,6 @@ Open `http://localhost:4173`. No package install or paid service is required. To
 Run the command npm test in this folder. Tests cover commission arithmetic, input validation, normalized duplicate matching, revenue and partial commission events, overpayment rejection, and migration of older browser records.
 
 The original ReferDue idea and project context remain in Notion. No source page was edited.
+
+## Phase 3 review — 2026-10-09
+Phase 3 remains in progress: regression fixes and 13 passing tests are recorded in [HANDOFF.md](HANDOFF.md). Browser acceptance is blocked by a missing Chromium executable. The local prototype is not a production-ready SaaS; the handoff lists remaining product gaps and manual actions.
