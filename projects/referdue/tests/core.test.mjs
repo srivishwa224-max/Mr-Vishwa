@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  calculateCommission, createReferral, findPotentialDuplicates, getCommissionLedger,
+  commitReferrals, calculateCommission, createReferral, findPotentialDuplicates, getCommissionLedger,
   getDisplayStatus, loadReferrals, recordCommissionPayment, recordCustomerRevenue,
   saveReferrals, STORAGE_KEY, validateReferral,
 } from "../core.mjs";
@@ -81,14 +81,64 @@ test("ledger rejects overpayments and invalid amounts", () => {
   assert.throws(() => recordCustomerRevenue(referral, 0), /greater than zero/);
 });
 
-test("local storage recovers invalid data and migrates older records", () => {
+test("local storage preserves invalid data and migrates valid older records", () => {
   const values = new Map([[STORAGE_KEY, "broken"]]);
   const storage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
-  assert.deepEqual(loadReferrals(storage), []);
-  saveReferrals([{ id: "one", company: "Northstar" }], storage);
+  assert.throws(() => loadReferrals(storage), /Writes are blocked/);
+  assert.equal(values.get(STORAGE_KEY), "broken");
+  const old = createReferral(example());
+  delete old.status; delete old.actualRevenue; delete old.commissionPaid; delete old.ledger;
+  saveReferrals([{ ...old, id: "one" }], storage);
   const [loaded] = loadReferrals(storage);
   assert.equal(loaded.id, "one");
   assert.equal(loaded.status, "Submitted");
   assert.equal(loaded.actualRevenue, 0);
   assert.deepEqual(loaded.ledger, []);
+});
+
+
+test("fixed commission is earned once, only after customer revenue", () => {
+  let record = createReferral(example({ commissionType: "fixed", commissionValue: 50 }));
+  assert.equal(getCommissionLedger(record).due, 0);
+  assert.throws(() => recordCommissionPayment(record, 1), /greater than the commission due/);
+  record = recordCustomerRevenue(record, 100);
+  record = recordCustomerRevenue(record, 200);
+  assert.equal(getCommissionLedger(record).earned, 50);
+  record = recordCommissionPayment(record, 50);
+  assert.equal(getDisplayStatus(record), "Commission Paid");
+});
+
+test("failed persistence leaves caller state unchanged", () => {
+  const previous = [createReferral(example())];
+  let state = previous;
+  assert.throws(() => { state = commitReferrals([], { setItem() { throw new Error("Quota exceeded"); } }); }, /Quota/);
+  assert.equal(state, previous);
+});
+
+test("fractional cents, nonfinite and excessive amounts are rejected", () => {
+  const record = createReferral(example());
+  for (const amount of [0.001, 1.111, Infinity, -1, 1000000001]) {
+    assert.throws(() => recordCustomerRevenue(record, amount));
+    assert.throws(() => recordCommissionPayment(record, amount));
+    assert.ok(validateReferral(example({ dealValue: amount })));
+  }
+  assert.equal(recordCustomerRevenue(record, 0.01).actualRevenue, 0.01);
+});
+
+test("malformed saved records never silently become an empty workspace", () => {
+  const record = createReferral(example());
+  for (const data of [{}, [null], [{ id: "one" }], [{ ...record, createdAt: "bad" }],
+    [{ ...record, ledger: [{ type: "customer-revenue", amount: 2, recordedAt: "bad" }] }], [record, record]]) {
+    const raw = JSON.stringify(data);
+    assert.throws(() => loadReferrals({ getItem: () => raw }), /Writes are blocked/);
+  }
+});
+
+test("page includes all literal ID selectors required by app startup", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const app = await readFile(new URL("../app.mjs", import.meta.url), "utf8");
+  for (const [, id] of app.matchAll(/querySelector\("#([a-z-]+)"\)/g)) {
+    assert.ok(html.includes('id="' + id + '"'), "Missing DOM element: " + id);
+  }
 });
