@@ -11,6 +11,11 @@ export function calculateCommission(dealValue, commissionType, commissionValue) 
   return Math.round((amount + Number.EPSILON) * 100) / 100;
 }
 
+function validAmount(value, allowZero = false) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= (allowZero ? 0 : 0.01) && number <= 1e9 && Math.abs(number * 100 - Math.round(number * 100)) < 0.00001;
+}
+
 export function validateReferral(data) {
   const required = ["referrer", "company", "prospect", "service"];
   for (const field of required) {
@@ -18,11 +23,11 @@ export function validateReferral(data) {
   }
   const dealValue = Number(data.dealValue);
   const commissionValue = Number(data.commissionValue);
-  if (!Number.isFinite(dealValue) || dealValue <= 0) return "Enter an estimated deal value greater than zero.";
-  if (!Number.isFinite(commissionValue) || commissionValue <= 0) return "Enter a commission amount greater than zero.";
+  if (!validAmount(dealValue)) return "Enter an estimated deal value greater than zero, up to 1 billion, with at most two decimals.";
+  if (!validAmount(commissionValue)) return "Enter a commission amount greater than zero, up to 1 billion, with at most two decimals.";
   if (data.commissionType === "percent" && commissionValue > 100) return "A percentage commission cannot be greater than 100%.";
   if (!["percent", "fixed"].includes(data.commissionType)) return "Choose a valid commission type.";
-  if (!/^[A-Z]{3}$/.test(String(data.currency ?? ""))) return "Choose a valid currency.";
+  if (!["INR", "USD", "GBP", "EUR"].includes(data.currency)) return "Choose a valid currency.";
   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(data.email).trim())) return "Enter a valid email address or leave it blank.";
   return "";
 }
@@ -89,18 +94,23 @@ export function findPotentialDuplicates(data, referrals) {
 export function loadReferrals(storage = globalThis.localStorage) {
   try {
     const parsed = JSON.parse(storage.getItem(STORAGE_KEY) ?? "[]");
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(item => item && typeof item.id === "string").map(item => ({
-      ...item,
-      status: [...MANUAL_STATUSES, ...PAYMENT_STATUSES].includes(item.status) ? item.status : "Submitted",
-      email: String(item.email ?? ""),
-      phone: String(item.phone ?? ""),
-      actualRevenue: Number(item.actualRevenue) || 0,
-      commissionPaid: Number(item.commissionPaid) || 0,
-      ledger: Array.isArray(item.ledger) ? item.ledger : [],
-    }));
+    if (!Array.isArray(parsed)) throw new Error("Invalid records");
+    const ids = new Set();
+    return parsed.map(item => {
+      if (!item || typeof item.id !== "string" || !item.id || ids.has(item.id) || validateReferral(item) ||
+          typeof item.createdAt !== "string" || !Number.isFinite(Date.parse(item.createdAt))) throw new Error("Invalid record");
+      ids.add(item.id);
+      const record = { ...item, status: item.status ?? "Submitted", email: String(item.email ?? ""), phone: String(item.phone ?? ""),
+        actualRevenue: Number(item.actualRevenue ?? 0), commissionPaid: Number(item.commissionPaid ?? 0), ledger: item.ledger ?? [],
+        commissionEstimate: calculateCommission(item.dealValue, item.commissionType, item.commissionValue) };
+      if (!validAmount(record.actualRevenue, true) || !validAmount(record.commissionPaid, true) ||
+          ![...MANUAL_STATUSES, ...PAYMENT_STATUSES].includes(record.status) || !Array.isArray(record.ledger) ||
+          record.ledger.some(entry => !entry || !["customer-revenue", "commission-payment"].includes(entry.type) ||
+            !validAmount(entry.amount) || !Number.isFinite(Date.parse(entry.recordedAt)))) throw new Error("Invalid ledger");
+      return record;
+    });
   } catch {
-    return [];
+    throw new Error("Saved records could not be loaded. Writes are blocked to preserve them. Back up browser storage before repairing it; see HANDOFF.md.");
   }
 }
 
@@ -109,7 +119,7 @@ export function saveReferrals(referrals, storage = globalThis.localStorage) {
 }
 
 export function getCommissionLedger(referral) {
-  const earned = calculateCommission(referral.actualRevenue, referral.commissionType, referral.commissionValue);
+  const earned = Number(referral.actualRevenue) > 0 ? calculateCommission(referral.actualRevenue, referral.commissionType, referral.commissionValue) : 0;
   const paid = roundMoney(referral.commissionPaid ?? 0);
   return { revenueReceived: roundMoney(referral.actualRevenue ?? 0), earned, paid, due: Math.max(0, roundMoney(earned - paid)) };
 }
@@ -128,8 +138,9 @@ export function setReferralStatus(referral, nextStatus, now = new Date()) {
 
 export function recordCustomerRevenue(referral, amount, now = new Date()) {
   const value = Number(amount);
-  if (!Number.isFinite(value) || value <= 0) throw new Error("Enter revenue received greater than zero.");
+  if (!validAmount(value)) throw new Error("Enter revenue received greater than zero, up to 1 billion, with at most two decimals.");
   const rounded = roundMoney(value);
+  if (!validAmount(Number(referral.actualRevenue ?? 0) + rounded)) throw new Error("Revenue total exceeds the supported range.");
   const updated = {
     ...referral,
     actualRevenue: roundMoney((Number(referral.actualRevenue) || 0) + rounded),
@@ -143,7 +154,7 @@ export function recordCustomerRevenue(referral, amount, now = new Date()) {
 
 export function recordCommissionPayment(referral, amount, now = new Date()) {
   const value = Number(amount);
-  if (!Number.isFinite(value) || value <= 0) throw new Error("Enter a commission payment greater than zero.");
+  if (!validAmount(value)) throw new Error("Enter a commission payment greater than zero, up to 1 billion, with at most two decimals.");
   const rounded = roundMoney(value);
   const ledger = getCommissionLedger(referral);
   if (rounded > ledger.due) throw new Error(`Payment is greater than the commission due (${ledger.due.toFixed(2)}).`);
@@ -155,4 +166,10 @@ export function recordCommissionPayment(referral, amount, now = new Date()) {
   };
   updated.status = getCommissionLedger(updated).due > 0 ? "Commission Due" : "Commission Paid";
   return updated;
+}
+
+// Persist first: callers keep their previous state if storage rejects the write.
+export function commitReferrals(next, storage = globalThis.localStorage) {
+  saveReferrals(next, storage);
+  return next;
 }
