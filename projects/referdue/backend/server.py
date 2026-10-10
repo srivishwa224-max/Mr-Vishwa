@@ -10,6 +10,7 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from store import Store
+from workflows import Workflows
 
 
 class App:
@@ -21,6 +22,7 @@ class App:
         CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, salt BLOB NOT NULL, digest BLOB NOT NULL);
         CREATE TABLE IF NOT EXISTS sessions(digest TEXT PRIMARY KEY, actor TEXT NOT NULL REFERENCES users(id), expires INTEGER NOT NULL);
         ''')
+        self.workflows = Workflows(self.store)
         self.attempts = []
 
     @staticmethod
@@ -57,6 +59,9 @@ class App:
         return token
 
     def route(self, method, path, data, token):
+        if method=='POST' and path in ['/api/accept-preview','/api/accept','/api/portal']:
+            capability=data.get('token')
+            return self.workflows.preview(capability) if path=='/api/accept-preview' else self.workflows.accept(capability) if path=='/api/accept' else self.workflows.portal(capability)
         actor = self.authenticate(token)
         if path == '/api/logout' and method == 'POST':
             with self.db: self.db.execute('DELETE FROM sessions WHERE digest=?',(hashlib.sha256(token.encode()).hexdigest(),))
@@ -67,23 +72,34 @@ class App:
         parts = path.strip('/').split('/')
         if len(parts)==6 and parts[:2]==['api','workspaces'] and parts[3]=='referrals':
             workspace, referral, action = parts[2],parts[4],parts[5]
-            if action=='ledger' and method=='GET': return self.store.ledger(actor,workspace,referral)
+            if action=='ledger' and method=='GET': return self.workflows.summary(actor,workspace,referral)
             if action=='terms' and method=='POST':
                 self.store.set_terms(actor,workspace,referral,data.get('kind'),data.get('value'),data.get('currency'))
                 return self.store.ledger(actor,workspace,referral)
             if action=='payments' and method=='POST':
-                return self.store.record_payment(actor,workspace,referral,data.get('kind'),data.get('amount'),data.get('request_id'))
+                return self.workflows.payment(actor,workspace,referral,data)
+            if action=='accept-link' and method=='POST': return self.workflows.issue(actor,workspace,referral,'accept')
+            if action=='stage' and method=='POST': return self.workflows.stage(actor,workspace,referral,data.get('stage'))
+            if action=='approve' and method=='POST': return self.workflows.approve(actor,workspace,referral,data.get('due_date'))
+            if action=='evidence':
+                return self.workflows.add_evidence(actor,workspace,referral,data) if method=='POST' else self.workflows.evidence(actor,workspace,referral)
+            if action=='evidence-download' and method=='POST': return self.workflows.evidence(actor,workspace,referral,data.get('id'))
             raise LookupError('Not found')
         if len(parts)!=4 or parts[:2]!=['api','workspaces']: raise LookupError('Not found')
         workspace, resource = parts[2:]
         self.store._authorize(actor,workspace)
         if resource == 'partners':
-            if method=='POST': return {'id':self.store.add_partner(actor,workspace,data.get('name'),data.get('email'))}
-            return {'items':self.db.execute('SELECT id,name,email FROM partners WHERE workspace=?',(workspace,)).fetchall()}
+            if method=='POST': return {'id':self.store.add_partner(actor,workspace,data.get('name'),data.get('email'),data.get('payment_reference',''))}
+            return {'items':self.db.execute("SELECT p.id,p.name,p.email,coalesce(x.payment_reference,'') FROM partners p LEFT JOIN partner_profiles x ON x.partner=p.id WHERE p.workspace=?",(workspace,)).fetchall()}
         if resource == 'referrals':
-            if method=='POST': return {'id':self.store.add_referral(actor,workspace,data.get('partner'),data.get('prospect'))}
+            if method=='POST': return self.workflows.submit(actor,workspace,data)
             return {'items':self.store.list_referrals(actor,workspace)}
-        if resource == 'history' and method=='GET': return {'items':self.store.history(actor,workspace)}
+        if resource=='portal-link' and method=='POST': return self.workflows.issue(actor,workspace,data.get('partner'),'portal')
+        if resource=='statement' and method=='POST': return self.workflows.statement(actor,workspace,data.get('partner'),data.get('month'))
+        if resource=='outbox' and method=='GET':
+            self.store._authorize(actor,workspace,owner=True)
+            return {'items':self.db.execute('SELECT event,recipient,status,created_at FROM outbox WHERE workspace=? ORDER BY id',(workspace,)).fetchall()}
+        if resource == 'history'  and method=='GET': return {'items':self.store.history(actor,workspace)}
         if resource == 'members' and method=='POST':
             self.store._authorize(actor,workspace,owner=True)
             email = data.get('email','')
@@ -104,6 +120,7 @@ def make_handler(app):
             self.send_header('Content-Type',content_type)
             self.send_header('Content-Length',str(len(raw)))
             self.send_header('Cache-Control','no-store')
+            self.send_header('Referrer-Policy','no-referrer')
             self.send_header('X-Content-Type-Options','nosniff')
             self.send_header('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
             if cookie: self.send_header('Set-Cookie',cookie)
@@ -127,7 +144,7 @@ def make_handler(app):
                 data = {}
                 if method=='POST':
                     length = int(self.headers.get('Content-Length','0'))
-                    if length<1 or length>16384 or self.headers.get('Content-Type')!='application/json': raise ValueError('Expected JSON, maximum 16 KB')
+                    if length<1 or length>1500000 or self.headers.get('Content-Type')!='application/json': raise ValueError('Expected JSON, maximum 1.5 MB')
                     data=json.loads(self.rfile.read(length))
                     if not isinstance(data,dict): raise ValueError('Expected JSON object')
                 jar = SimpleCookie(); jar.load(self.headers.get('Cookie',''))
