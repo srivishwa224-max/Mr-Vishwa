@@ -26,3 +26,6 @@ Vishwa said to go ahead now. Added backend/store.py, backend/test_store.py and b
 
 ### Evening continuation — 2026-10-10
 Added local account registration/login, salted password hashing, expiring hashed sessions, logout, a loopback HTTP API with Host/Origin checks, and a minimal connected workspace page for workspaces/partners/team/referral introductions. 12 Python tests pass including real HTTP boundary tests; JavaScript syntax check passes. No browser acceptance claimed. Existing commission prototype is separate; full ledger integration, secure referrer portal, acceptance/attribution, evidence, statements, notifications and production auth hardening remain. Continue Phase 3; do not advance to another idea.
+
+### Commission integration — 2026-10-10
+Added authenticated persistent commission terms and revenue/payment ledger to the connected workspace. Sixteen Python tests and JavaScript syntax check pass. Browser and concurrency stress checks remain open. Continue Phase 3: full referral fields/stages, acceptance/attribution, referrer-only access, approval/due dates, evidence, statements, notifications and production hardening. No next project selected.
