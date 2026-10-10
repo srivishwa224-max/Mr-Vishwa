@@ -13,6 +13,7 @@ class Store:
           role TEXT NOT NULL CHECK(role IN ('owner','team')), PRIMARY KEY(workspace,actor));
         CREATE TABLE IF NOT EXISTS partners(id TEXT PRIMARY KEY, workspace TEXT NOT NULL REFERENCES workspaces(id),
           name TEXT NOT NULL, email TEXT NOT NULL, UNIQUE(workspace,id));
+        CREATE TABLE IF NOT EXISTS partner_profiles(partner TEXT PRIMARY KEY REFERENCES partners(id), payment_reference TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS referrals(id TEXT PRIMARY KEY, workspace TEXT NOT NULL, partner TEXT NOT NULL,
           prospect TEXT NOT NULL, FOREIGN KEY(workspace,partner) REFERENCES partners(workspace,id));
         CREATE TABLE IF NOT EXISTS activity(id INTEGER PRIMARY KEY, workspace TEXT NOT NULL,
@@ -58,12 +59,14 @@ class Store:
             self.db.execute('INSERT INTO members VALUES(?,?,?)', (workspace,member,'team'))
             self._log(actor,workspace,'member.added',member)
 
-    def add_partner(self, actor, workspace, name, email):
+    def add_partner(self, actor, workspace, name, email, payment_reference=""):
+        if not isinstance(payment_reference,str) or len(payment_reference)>500: raise ValueError("Invalid payment reference")
         self._authorize(actor,workspace)
         name, email = self._text(name), self._text(email)
         key = str(uuid.uuid4())
         with self.db:
             self.db.execute('INSERT INTO partners VALUES(?,?,?,?)', (key,workspace,name,email))
+            self.db.execute('INSERT INTO partner_profiles VALUES(?,?)',(key,payment_reference))
             self._log(actor,workspace,'partner.created',key)
         return key
 
@@ -122,7 +125,7 @@ class Store:
         earned=(revenue*terms[1]+5000)//10000 if terms[0]=='percent' else (terms[1] if revenue else 0)
         return {'terms':terms,'revenue':revenue,'earned':earned,'paid':paid,'due':earned-paid,'events':events}
 
-    def record_payment(self, actor, workspace, referral, kind, amount, request_id):
+    def record_payment(self, actor, workspace, referral, kind, amount, request_id, on_record=None):
         self._referral_access(actor,workspace,referral)
         if kind not in ('revenue','commission'): raise ValueError('Invalid payment type')
         cents=self.cents(amount)
@@ -140,4 +143,5 @@ class Store:
             if kind=='revenue' and current['revenue']+cents>100000000000: raise ValueError('Revenue total too large')
             self.db.execute('INSERT INTO payments(id,referral,kind,cents) VALUES(?,?,?,?)',(request_id,referral,kind,cents))
             self._log(actor,workspace,'payment.'+kind,request_id)
+            if on_record is not None: on_record()
         return self.ledger(actor,workspace,referral)
