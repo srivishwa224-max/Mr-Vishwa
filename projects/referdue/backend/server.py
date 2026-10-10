@@ -16,6 +16,7 @@ class App:
     def __init__(self, path):
         self.store = Store(path)
         self.db = self.store.db
+        self.store.init_ledger()
         self.db.executescript('''
         CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, salt BLOB NOT NULL, digest BLOB NOT NULL);
         CREATE TABLE IF NOT EXISTS sessions(digest TEXT PRIMARY KEY, actor TEXT NOT NULL REFERENCES users(id), expires INTEGER NOT NULL);
@@ -64,6 +65,15 @@ class App:
             if method == 'POST': return {'id':self.store.create_workspace(actor,data.get('name'))}
             return {'items':self.db.execute('SELECT w.id,w.name,m.role FROM workspaces w JOIN members m ON w.id=m.workspace WHERE m.actor=?',(actor,)).fetchall()}
         parts = path.strip('/').split('/')
+        if len(parts)==6 and parts[:2]==['api','workspaces'] and parts[3]=='referrals':
+            workspace, referral, action = parts[2],parts[4],parts[5]
+            if action=='ledger' and method=='GET': return self.store.ledger(actor,workspace,referral)
+            if action=='terms' and method=='POST':
+                self.store.set_terms(actor,workspace,referral,data.get('kind'),data.get('value'),data.get('currency'))
+                return self.store.ledger(actor,workspace,referral)
+            if action=='payments' and method=='POST':
+                return self.store.record_payment(actor,workspace,referral,data.get('kind'),data.get('amount'),data.get('request_id'))
+            raise LookupError('Not found')
         if len(parts)!=4 or parts[:2]!=['api','workspaces']: raise LookupError('Not found')
         workspace, resource = parts[2:]
         self.store._authorize(actor,workspace)
