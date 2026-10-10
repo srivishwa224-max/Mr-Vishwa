@@ -10,7 +10,7 @@ This file tracks the sequential three-phase build automation. The Idea Vault is 
 - Phase 2: Complete on 2026-10-08. Added deal statuses, duplicate warnings, a local commission ledger with partial payments, and a referrer filter preview. Eight core tests pass. Referrer filtering is not access control.
 - Phase 3: In progress on 2026-10-09. Fixed missing DOM counter, fixed commission timing, failed-save state handling and malformed-storage preservation; added amount validation and duplicate-confirmation reset. All 13 regression tests and both module syntax checks pass. Browser acceptance could not run: Chromium executable missing. See `projects/referdue/HANDOFF.md` for verification, recovery, product gaps and manual handoff.
 - Scope correction 2026-10-10: Vishwa requires the full core app before moving to another project. Prototype test success alone is insufficient. See `projects/referdue/FULL_APP_COMPLETION.md` for the source-backed requirements and verification gates.
-- Next: Receive Vishwa's prototype test results (not yet supplied here), resolve failures, then implement and verify the remaining full-app core features. Phase 3 stays open across runs until that work is complete. Live credentials, spending, real data and deployment remain manual handoff gates.
+- Next: Resolve the engineering and browser acceptance gates in `projects/referdue/CURRENT_HANDOFF.md`. Vishwa authorized autonomous continuation; do not wait for repeated approval. Phase 3 stays open. Live credentials, spending, real data and deployment remain manual handoff gates.
 - Do not start another project until Phase 3 is complete.
 
 ## After ReferDue
@@ -29,3 +29,6 @@ Added local account registration/login, salted password hashing, expiring hashed
 
 ### Commission integration — 2026-10-10
 Added authenticated persistent commission terms and revenue/payment ledger to the connected workspace. Sixteen Python tests and JavaScript syntax check pass. Browser and concurrency stress checks remain open. Continue Phase 3: full referral fields/stages, acceptance/attribution, referrer-only access, approval/due dates, evidence, statements, notifications and production hardening. No next project selected.
+
+### Core workflow continuation — 2026-10-10
+Implemented full referral capture and duplicate warnings, expiring acceptance links with first-accepted claims, read-only partner capability portal, guarded stages, owner approval/due dates, private evidence, monthly CSV statements and a dry-run-first notification worker. All 28 Python tests passed; JavaScript syntax passed. Chromium installation failed due to invalid download, so browser acceptance remains unverified. CURRENT_HANDOFF.md is the current authoritative status; earlier entries are historical. Production email ownership/recovery/throttling, production serving/security checks, legacy-data migration and browser/UI review remain assistant engineering work, not Vishwa-only tasks. No phase completion or next-project selection.
