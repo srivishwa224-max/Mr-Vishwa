@@ -23,3 +23,6 @@ Record progress here and in the project folder after each phase. Keep all change
 
 ## Authorized continuation — 2026-10-10
 Vishwa said to go ahead now. Added backend/store.py, backend/test_store.py and backend/README.md under ReferDue: SQLite persistence, workspace membership checks and append-only activity triggers. Six Python unit tests passed using synthetic fixtures. This is not integrated with login or UI and is not a complete app. Phase 3 remains open; next implement trusted authentication/API boundary and remaining full-app requirements. Do not wait for prototype feedback to continue independent implementation, and do not assume feedback passed.
+
+### Evening continuation — 2026-10-10
+Added local account registration/login, salted password hashing, expiring hashed sessions, logout, a loopback HTTP API with Host/Origin checks, and a minimal connected workspace page for workspaces/partners/team/referral introductions. 12 Python tests pass including real HTTP boundary tests; JavaScript syntax check passes. No browser acceptance claimed. Existing commission prototype is separate; full ledger integration, secure referrer portal, acceptance/attribution, evidence, statements, notifications and production auth hardening remain. Continue Phase 3; do not advance to another idea.
