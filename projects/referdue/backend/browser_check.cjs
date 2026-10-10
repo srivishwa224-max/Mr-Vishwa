@@ -1,0 +1,56 @@
+// Requires Playwright plus Chromium. Run against a fresh, disposable local database.
+const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+(async () => {
+  const browser = await chromium.launch({headless:true});
+  try {
+    const page = await browser.newPage();
+    const errors=[]; page.on('pageerror',error=>errors.push(error.message));
+    await page.goto('http://127.0.0.1:4174');
+    await page.locator('#login [name=email]').fill(`sample-${Date.now()}@example.com`);
+    await page.locator('#login [name=password]').fill('Synthetic-test-passphrase-only');
+    await page.locator('#login button[value=register]').click();
+    await page.locator('#workspace').waitFor({state:'visible'});
+    await page.locator('#new-workspace [name=name]').fill('Browser sample');
+    await page.locator('#new-workspace button').click();
+    await page.locator('#details').waitFor({state:'visible'});
+    await page.locator('#partner [name=name]').fill('Sample referrer');
+    await page.locator('#partner [name=email]').fill('partner@example.com');
+    await page.locator('#partner button').click();
+    await page.waitForFunction(()=>document.querySelector('#partner-selection').options.length===1);
+    const data={prospect:'Sample prospect',company:'Example Co',email:'prospect@example.com',service:'Design',introduced:'2026-10-10',estimate:'1000'};
+    for(const [name,value] of Object.entries(data)) await page.locator(`#referral [name=${name}]`).fill(value);
+    await page.locator('#referral button').click();
+    await page.locator('#terms').waitFor({state:'visible'});
+    await page.locator('#terms [name=value]').fill('10');
+    await page.locator('#terms button').click();
+    await page.locator('#terms').waitFor({state:'hidden'});
+    await page.locator('#accept-link').click();
+    await page.waitForFunction(()=>document.querySelector('#generated-token').textContent.includes('#accept='));
+    const text=await page.locator('#generated-token').textContent();
+    const token=decodeURIComponent(text.split('#accept=')[1]);
+    await page.locator('#capability [name=token]').fill(token);
+    await page.locator('#capability button[value=accept-preview]').click();
+    await page.locator('#accept-confirm').waitFor({state:'visible'});
+    await page.locator('#accept-confirm').click();
+    await page.waitForFunction(()=>document.querySelector('#ledger-summary').textContent.includes('Stage: Accepted'));
+    await page.locator('#stage [name=stage]').selectOption('Won');
+    await page.locator('#stage button').click();
+    await page.waitForFunction(()=>document.querySelector('#ledger-summary').textContent.includes('Stage: Won'));
+    await page.locator('#payment [name=amount]').fill('500');
+    await page.locator('#payment button').click();
+    await page.waitForFunction(()=>document.querySelector('#ledger-summary').textContent.includes('Pending approval'));
+    await page.locator('#approval [name=due_date]').fill('2026-10-10');
+    await page.locator('#approval button').click();
+    await page.waitForFunction(()=>document.querySelector('#ledger-summary').textContent.includes('Due date: 2026-10-10'));
+    await page.locator('#payment [name=kind]').selectOption('commission');
+    await page.locator('#payment [name=amount]').fill('50');
+    await page.locator('#payment button').click();
+    await page.waitForFunction(()=>document.querySelector('#ledger-summary').textContent.includes('Commission Paid'));
+    await page.reload();
+    await page.waitForFunction(()=>document.querySelector('#ledger-summary').textContent.includes('Commission Paid'));
+    await page.setViewportSize({width:390,height:844});
+    assert.deepEqual(errors,[]);
+    console.log('Browser workflow passed: account → introduction → acceptance → revenue → approval → payment → reload.');
+  } finally { await browser.close(); }
+})().catch(error=>{console.error(error);process.exitCode=1;});
