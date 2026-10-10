@@ -17,6 +17,10 @@ async function details() {
   list('partners',partners.items.map(row=>row[1]+' — '+row[2]));
   $('partner-selection').replaceChildren(...partners.items.map(row=>new Option(row[1],row[0])));
   list('referrals',referrals.items.map(row=>row[2]));
+  const selected=$('ledger-referral').value;
+  $('ledger-referral').replaceChildren(...referrals.items.map(row=>new Option(row[2],row[0])));
+  if(referrals.items.some(row=>row[0]===selected)) $('ledger-referral').value=selected;
+  await ledger();
   list('history',history.items.map(row=>row[3]+' · '+row[1]));
 }
 async function refresh() {
@@ -40,3 +44,25 @@ for(const [id,resource] of [['partner','partners'],['referral','referrals'],['me
 $('selection').addEventListener('change',()=>details().catch(error=>$('message').textContent=error.message));
 $('logout').addEventListener('click',async ()=>{try {await api('logout',{}); location.reload();}catch(error){$('message').textContent=error.message;}});
 refresh().catch(()=>{ $('auth').hidden=false; $('workspace').hidden=true; });
+
+function ledgerPath() { return 'workspaces/'+encodeURIComponent($('selection').value)+'/referrals/'+encodeURIComponent($('ledger-referral').value)+'/'; }
+async function ledger() {
+  const exists=Boolean($('ledger-referral').value);
+  $('terms').hidden=!exists; $('payment').hidden=!exists;
+  if(!exists) { $('ledger-summary').textContent='Select a referral first.'; return; }
+  const result=await api(ledgerPath()+'ledger');
+  $('terms').hidden=Boolean(result.terms); $('payment').hidden=!result.terms;
+  const money=value=>new Intl.NumberFormat('en-IN',{style:'currency',currency:result.terms?.[2]||'INR'}).format(value/100);
+  $('ledger-summary').textContent=['Revenue: '+money(result.revenue),'Earned: '+money(result.earned),'Paid: '+money(result.paid),'Due: '+money(result.due),'Events: '+result.events.length].join('\n');
+}
+$('ledger-referral').addEventListener('change',()=>ledger().catch(error=>$('message').textContent=error.message));
+bind('terms',async data=>{ await api(ledgerPath()+'terms',data); await details(); });
+let paymentAttempt=null;
+bind('payment',async data=>{
+  const path=ledgerPath()+'payments';
+  const signature=JSON.stringify([path,data]);
+  if(!paymentAttempt || paymentAttempt.signature!==signature) paymentAttempt={signature,id:crypto.randomUUID()};
+  await api(path,{...data,request_id:paymentAttempt.id});
+  paymentAttempt=null;
+  await details();
+});
