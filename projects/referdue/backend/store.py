@@ -83,3 +83,61 @@ class Store:
     def history(self, actor, workspace):
         self._authorize(actor,workspace)
         return self.db.execute('SELECT actor,action,entity,created_at FROM activity WHERE workspace=? ORDER BY id', (workspace,)).fetchall()
+
+    def init_ledger(self):
+        self.db.executescript('''
+        CREATE TABLE IF NOT EXISTS terms(referral TEXT PRIMARY KEY REFERENCES referrals(id), kind TEXT NOT NULL CHECK(kind IN ('fixed','percent')), value INTEGER NOT NULL CHECK(value>0), currency TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS payments(id TEXT PRIMARY KEY, referral TEXT NOT NULL REFERENCES referrals(id), kind TEXT NOT NULL CHECK(kind IN ('revenue','commission')), cents INTEGER NOT NULL CHECK(cents>0), created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+        ''')
+
+    @staticmethod
+    def cents(value):
+        from decimal import Decimal, InvalidOperation
+        try:
+            amount=Decimal(str(value))
+            if not amount.is_finite() or amount<=0 or amount>Decimal('1000000000') or amount*100 != (amount*100).to_integral_value(): raise ValueError('Invalid amount')
+            return int(amount*100)
+        except (InvalidOperation, TypeError): raise ValueError('Invalid amount')
+
+    def _referral_access(self, actor, workspace, referral):
+        self._authorize(actor,workspace)
+        if not self.db.execute('SELECT 1 FROM referrals WHERE id=? AND workspace=?',(referral,workspace)).fetchone():
+            raise PermissionError('Access denied')
+
+    def set_terms(self, actor, workspace, referral, kind, value, currency):
+        self._referral_access(actor,workspace,referral)
+        number=self.cents(value)
+        if kind not in ('fixed','percent') or currency not in ('INR','USD','GBP','EUR') or (kind=='percent' and number>10000): raise ValueError('Invalid terms')
+        with self.db:
+            self.db.execute('INSERT INTO terms VALUES(?,?,?,?)',(referral,kind,number,currency))
+            self._log(actor,workspace,'terms.recorded',referral)
+
+    def ledger(self, actor, workspace, referral):
+        self._referral_access(actor,workspace,referral)
+        terms=self.db.execute('SELECT kind,value,currency FROM terms WHERE referral=?',(referral,)).fetchone()
+        if not terms: return {'terms':None,'revenue':0,'earned':0,'paid':0,'due':0,'events':[]}
+        events=self.db.execute('SELECT id,kind,cents,created_at FROM payments WHERE referral=? ORDER BY created_at,id',(referral,)).fetchall()
+        revenue=sum(e[2] for e in events if e[1]=='revenue')
+        paid=sum(e[2] for e in events if e[1]=='commission')
+        earned=(revenue*terms[1]+5000)//10000 if terms[0]=='percent' else (terms[1] if revenue else 0)
+        return {'terms':terms,'revenue':revenue,'earned':earned,'paid':paid,'due':earned-paid,'events':events}
+
+    def record_payment(self, actor, workspace, referral, kind, amount, request_id):
+        self._referral_access(actor,workspace,referral)
+        if kind not in ('revenue','commission'): raise ValueError('Invalid payment type')
+        cents=self.cents(amount)
+        request_id=self._text(request_id)
+        # Serialize the read/check/write sequence to prevent concurrent overpayment.
+        with self.db:
+            self.db.execute('BEGIN IMMEDIATE')
+            old=self.db.execute('SELECT referral,kind,cents FROM payments WHERE id=?',(request_id,)).fetchone()
+            if old:
+                if old!=(referral,kind,cents): raise ValueError('Request identifier conflict')
+                return self.ledger(actor,workspace,referral)
+            current=self.ledger(actor,workspace,referral)
+            if not current['terms']: raise ValueError('Record terms first')
+            if kind=='commission' and cents>current['due']: raise ValueError('Payment exceeds commission due')
+            if kind=='revenue' and current['revenue']+cents>100000000000: raise ValueError('Revenue total too large')
+            self.db.execute('INSERT INTO payments(id,referral,kind,cents) VALUES(?,?,?,?)',(request_id,referral,kind,cents))
+            self._log(actor,workspace,'payment.'+kind,request_id)
+        return self.ledger(actor,workspace,referral)
