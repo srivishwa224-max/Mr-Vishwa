@@ -16,7 +16,12 @@ class ApiTests(unittest.TestCase):
         wid=self.app.route('POST','/api/workspaces',{'name':'Sample'},self.a)['id']
         prefix='/api/workspaces/'+wid+'/'
         partner=self.app.route('POST',prefix+'partners',{'name':'Example','email':'p@example.com'},self.a)['id']
-        self.app.route('POST',prefix+'referrals',{'partner':partner,'prospect':'Synthetic prospect'},self.a)
+        referral=self.app.route('POST',prefix+'referrals',{'partner':partner,'prospect':'Synthetic prospect'},self.a)['id']
+        ledger_path=prefix+'referrals/'+referral+'/'
+        self.app.route('POST',ledger_path+'terms',{'kind':'percent','value':'10','currency':'INR'},self.a)
+        result=self.app.route('POST',ledger_path+'payments',{'kind':'revenue','amount':'500','request_id':'api-sample'},self.a)
+        self.assertEqual(result['due'],5000)
+        with self.assertRaises(PermissionError): self.app.route('GET',ledger_path+'ledger',{},self.b)
         self.assertEqual(len(self.app.route('GET',prefix+'referrals',{},self.a)['items']),1)
         with self.assertRaises(PermissionError): self.app.route('GET',prefix+'referrals',{},self.b)
         self.app.route('POST',prefix+'members',{'email':'b@example.com'},self.a)
