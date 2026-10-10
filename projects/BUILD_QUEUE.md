@@ -9,7 +9,8 @@ This file tracks the sequential three-phase build automation. The Idea Vault is 
 - Phase 1: Complete (browser prototype; core tests passed; committed to this repository).
 - Phase 2: Complete on 2026-10-08. Added deal statuses, duplicate warnings, a local commission ledger with partial payments, and a referrer filter preview. Eight core tests pass. Referrer filtering is not access control.
 - Phase 3: In progress on 2026-10-09. Fixed missing DOM counter, fixed commission timing, failed-save state handling and malformed-storage preservation; added amount validation and duplicate-confirmation reset. All 13 regression tests and both module syntax checks pass. Browser acceptance could not run: Chromium executable missing. See `projects/referdue/HANDOFF.md` for verification, recovery, product gaps and manual handoff.
-- Next: Finish Phase 3 browser acceptance and any resulting fixes. Do not mark the prototype complete until verified. This project remains a local prototype, not a production-ready SaaS.
+- Scope correction 2026-10-10: Vishwa requires the full core app before moving to another project. Prototype test success alone is insufficient. See `projects/referdue/FULL_APP_COMPLETION.md` for the source-backed requirements and verification gates.
+- Next: Receive Vishwa's prototype test results (not yet supplied here), resolve failures, then implement and verify the remaining full-app core features. Phase 3 stays open across runs until that work is complete. Live credentials, spending, real data and deployment remain manual handoff gates.
 - Do not start another project until Phase 3 is complete.
 
 ## After ReferDue
