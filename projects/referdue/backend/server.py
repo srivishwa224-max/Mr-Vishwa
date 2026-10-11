@@ -11,10 +11,11 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from store import Store
 from workflows import Workflows
+from account_security import AccountSecurity
 
 
 class App:
-    def __init__(self, path):
+    def __init__(self, path, origin="http://127.0.0.1:4174"):
         self.store = Store(path)
         self.db = self.store.db
         self.store.init_ledger()
@@ -23,7 +24,7 @@ class App:
         CREATE TABLE IF NOT EXISTS sessions(digest TEXT PRIMARY KEY, actor TEXT NOT NULL REFERENCES users(id), expires INTEGER NOT NULL);
         ''')
         self.workflows = Workflows(self.store)
-        self.attempts = []
+        self.security = AccountSecurity(self,origin)
 
     @staticmethod
     def password_hash(password, salt):
@@ -37,10 +38,8 @@ class App:
 
     def login(self, email, password, register=False):
         now = time.time()
-        self.attempts = [t for t in self.attempts if now-t < 60]
-        if len(self.attempts) >= 10: raise ValueError('Too many attempts; wait one minute')
-        self.attempts.append(now)
-        if not isinstance(email,str) or len(email)>254 or '@' not in email: raise ValueError('Enter a valid email')
+        email=self.security.email(email)
+        self.security.throttle('login',email)
         if not isinstance(password,str) or not 12 <= len(password) <= 128: raise ValueError('Use a password of 12–128 characters')
         email = email.strip().lower()
         if register:
@@ -48,6 +47,7 @@ class App:
             salt = secrets.token_bytes(16)
             with self.db:
                 self.db.execute('INSERT INTO users VALUES(?,?,?,?)', (actor,email,salt,self.password_hash(password,salt)))
+        if register: self.security.request(email,'verify')
         row = self.db.execute('SELECT id,salt,digest FROM users WHERE email=?',(email,)).fetchone()
         salt = row[1] if row else bytes(16)
         digest = self.password_hash(password,salt)
@@ -59,6 +59,10 @@ class App:
         return token
 
     def route(self, method, path, data, token):
+        if method=='POST' and path in ['/api/request-verification','/api/request-reset']:
+            return self.security.request(data.get('email'),'verify' if path.endswith('verification') else 'reset')
+        if method=='POST' and path in ['/api/verify-account','/api/reset-password']:
+            return self.security.complete(data.get('token'),'verify' if path.endswith('account') else 'reset',data.get('password'))
         if method=='POST' and path in ['/api/accept-preview','/api/accept','/api/portal']:
             capability=data.get('token')
             return self.workflows.preview(capability) if path=='/api/accept-preview' else self.workflows.accept(capability) if path=='/api/accept' else self.workflows.portal(capability)
@@ -66,6 +70,8 @@ class App:
         if path == '/api/logout' and method == 'POST':
             with self.db: self.db.execute('DELETE FROM sessions WHERE digest=?',(hashlib.sha256(token.encode()).hexdigest(),))
             return {'ok':True}
+        if path=='/api/me' and method=='GET': return {'verified':self.security.verified(actor)}
+        if not self.security.verified(actor): raise PermissionError('Verify your email before accessing workspaces')
         if path == '/api/workspaces':
             if method == 'POST': return {'id':self.store.create_workspace(actor,data.get('name'))}
             return {'items':self.db.execute('SELECT w.id,w.name,m.role FROM workspaces w JOIN members m ON w.id=m.workspace WHERE m.actor=?',(actor,)).fetchall()}
@@ -78,6 +84,7 @@ class App:
                 return self.store.ledger(actor,workspace,referral)
             if action=='payments' and method=='POST':
                 return self.workflows.payment(actor,workspace,referral,data)
+            if action=='details' and method=='POST': return self.workflows.submit(actor,workspace,data,legacy=referral)
             if action=='accept-link' and method=='POST': return self.workflows.issue(actor,workspace,referral,'accept')
             if action=='stage' and method=='POST': return self.workflows.stage(actor,workspace,referral,data.get('stage'))
             if action=='approve' and method=='POST': return self.workflows.approve(actor,workspace,referral,data.get('due_date'))
@@ -105,7 +112,7 @@ class App:
             email = data.get('email','')
             if not isinstance(email,str): raise ValueError('Invalid email')
             row = self.db.execute('SELECT id FROM users WHERE email=?',(email.strip().lower(),)).fetchone()
-            if not row: raise ValueError('Account must register first')
+            if not row or not self.security.verified(row[0]): raise ValueError('Account must register and verify its email first')
             self.store.add_member(actor,workspace,row[0])
             return {'ok':True}
         raise LookupError('Not found')
@@ -141,6 +148,7 @@ def make_handler(app):
                 return self.reply(200,(Path(__file__).parent/name).read_bytes(), 'text/html; charset=utf-8' if name.endswith('.html') else 'text/javascript')
             if not self.path.startswith('/api/'): return self.reply(404,{'error':'Not found'})
             try:
+                if method=='POST': app.security.throttle('http',self.client_address[0],maximum=120)
                 data = {}
                 if method=='POST':
                     length = int(self.headers.get('Content-Length','0'))
@@ -166,7 +174,7 @@ if __name__=='__main__':
     args=parser.parse_args()
     path=Path(args.database).expanduser().resolve()
     if Path(__file__).resolve().parents[1] in path.parents: parser.error('Database must be outside the project folder')
-    app=App(path)
+    app=App(path,origin=f"http://127.0.0.1:{args.port}")
     server=HTTPServer(('127.0.0.1',args.port),make_handler(app))
     server.timeout=10
     print(f'Local development only: http://127.0.0.1:{args.port}',flush=True)
