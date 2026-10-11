@@ -1,3 +1,15 @@
+## Account and security update — 2026-10-11
+This section supersedes the older account-security and legacy-record gaps below.
+- Email verification is required before workspace access. Verification and reset links expire after 30 minutes and are single-use; reissue invalidates old links. Reset revokes all sessions. Account responses never return a token.
+- Login/account-request rate limits persist in SQLite across restarts. HTTP request limits are also persisted. These are baseline abuse controls, not proof of capacity under attack.
+- Account email delivery uses the existing dry-run-first notification adapter. Pending email bodies contain private capability links in the private database; sent bodies are cleared. Keep databases and backups private. No live email was sent.
+- Older backend introductions can have missing details completed without replacing the referral ID, partner, prospect or ledger. This does not import the separate browser-local prototype.
+- Added an HTTPS-only WSGI application boundary: secure cookies, exact Host/Origin checks, restricted static assets and security headers. Configure REFERDUE_DATABASE outside the source folder and REFERDUE_ORIGIN as the exact HTTPS origin when deploying through a production WSGI server and trusted HTTPS proxy. Entrypoint: backend/wsgi.py, application. Proxy/server installation, TLS and real deployment were not performed. Do not expose the development HTTPServer.
+- Actual verification: 39 Python tests pass, including reset expiry/replay, session revocation, throttling after restart, verification enforcement, fake account-mail delivery, WSGI secure-cookie/HTTPS checks and legacy preservation. Both JavaScript syntax checks pass.
+- Browser script now requires REFERDUE_TEST_DB pointing to the same fresh disposable synthetic database used by the test server. It uses test-only mailbox access to verify the sample account. Never point it at real data.
+- Browser acceptance remains unexecuted. Both ordinary Chromium and the supported headless-shell installation failed with invalid downloaded archives. No visual/responsive acceptance or live-production readiness is claimed.
+- Remaining gates: browser end-to-end and visual/accessibility review; independent security/load/backup recovery verification; live mail and deployment checks only after Vishwa authorizes/configures those services. Phase 3 stays open; do not select another project.
+
 # ReferDue local application — current handoff
 Updated 2026-10-10. This is the current status; earlier prototype notes are historical.
 
