@@ -1,15 +1,24 @@
 // Requires Playwright plus Chromium. Run against a fresh, disposable local database.
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
+const {execFileSync}=require('node:child_process');
+if(!process.env.REFERDUE_TEST_DB) throw new Error('Set REFERDUE_TEST_DB to the fresh disposable database used by the test server');
 (async () => {
   const browser = await chromium.launch({headless:true});
   try {
     const page = await browser.newPage();
     const errors=[]; page.on('pageerror',error=>errors.push(error.message));
     await page.goto('http://127.0.0.1:4174');
-    await page.locator('#login [name=email]').fill(`sample-${Date.now()}@example.com`);
+    const email=`sample-${Date.now()}@example.com`;
+    await page.locator('#login [name=email]').fill(email);
     await page.locator('#login [name=password]').fill('Synthetic-test-passphrase-only');
     await page.locator('#login button[value=register]').click();
+    await page.waitForFunction(()=>document.querySelector('#message').textContent==='Saved.');
+    // Test-only mailbox access to this disposable database; never use a real database.
+    const script="import sqlite3,sys; db=sqlite3.connect(sys.argv[1]); body=db.execute(\"SELECT body FROM account_mail WHERE recipient=? AND status='pending'\",(sys.argv[2],)).fetchone()[0]; print(body.split('#verify=')[1].split()[0])";
+    const verification=execFileSync('python3',['-c',script,process.env.REFERDUE_TEST_DB,email],{encoding:'utf8'}).trim();
+    await page.locator('#account-complete [name=token]').fill(verification);
+    await page.locator('#account-complete button[value=verify-account]').click();
     await page.locator('#workspace').waitFor({state:'visible'});
     await page.locator('#new-workspace [name=name]').fill('Browser sample');
     await page.locator('#new-workspace button').click();
@@ -20,7 +29,7 @@ const assert = require('node:assert/strict');
     await page.waitForFunction(()=>document.querySelector('#partner-selection').options.length===1);
     const data={prospect:'Sample prospect',company:'Example Co',email:'prospect@example.com',service:'Design',introduced:'2026-10-10',estimate:'1000'};
     for(const [name,value] of Object.entries(data)) await page.locator(`#referral [name=${name}]`).fill(value);
-    await page.locator('#referral button').click();
+    await page.locator('#referral button[value=new]').click();
     await page.locator('#terms').waitFor({state:'visible'});
     await page.locator('#terms [name=value]').fill('10');
     await page.locator('#terms button').click();
