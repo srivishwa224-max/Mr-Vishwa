@@ -10,6 +10,7 @@ from server import App
 
 def dispatch(app, send=None):
     """A single worker per database. Stable Message-ID supports downstream deduplication."""
+    accounts=app.db.execute("SELECT id,recipient,purpose,body FROM account_mail WHERE status='pending' ORDER BY id").fetchall()
     rows=app.db.execute("SELECT id,recipient,event,referral FROM outbox WHERE status='pending' ORDER BY id").fetchall()
     delivered=0
     for key,recipient,event,referral in rows:
@@ -22,7 +23,16 @@ def dispatch(app, send=None):
         send(message)
         with app.db: app.db.execute("UPDATE outbox SET status='sent' WHERE id=? AND status='pending'",(key,))
         delivered+=1
-    return {'pending_seen':len(rows),'sent':delivered,'dry_run':send is None}
+    for key,recipient,purpose,body in accounts:
+        message=EmailMessage(); message['To']=recipient
+        message['Subject']='ReferDue: '+('verify your email' if purpose=='verify' else 'password reset')
+        message['Message-ID']=f'<referdue-account-{key}@notifications.invalid>'
+        message.set_content(body)
+        if send is None: continue
+        send(message)
+        with app.db: app.db.execute("UPDATE account_mail SET status='sent',body='' WHERE id=? AND status='pending'",(key,))
+        delivered+=1
+    return {'pending_seen':len(rows)+len(accounts),'sent':delivered,'dry_run':send is None}
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description='Single-worker outbox dispatch. Default only counts pending notifications.')
