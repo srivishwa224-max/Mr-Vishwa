@@ -1,5 +1,6 @@
 import http.client
 import json
+import sqlite3
 import queue
 import tempfile
 import threading
@@ -44,6 +45,11 @@ class HttpTests(unittest.TestCase):
                 self.assertEqual(status,200)
                 self.assertIn('HttpOnly',headers['Set-Cookie']); self.assertIn('SameSite=Strict',headers['Set-Cookie'])
                 cookie=headers['Set-Cookie'].split(';')[0]
+                self.assertEqual(request('POST','/api/workspaces',{'name':'Sample'},cookie)[0],403)
+                with sqlite3.connect(Path(tmp)/'private.db') as db:
+                    body=db.execute("SELECT body FROM account_mail WHERE status='pending'").fetchone()[0]
+                token=body.split('#verify=')[1].split()[0]
+                self.assertEqual(request('POST','/api/verify-account',{'token':token})[0],200)
                 self.assertEqual(request('POST','/api/workspaces',{'name':'Sample'},cookie)[0],200)
                 response=request('GET','/api/workspaces',cookie=cookie)
                 self.assertEqual(len(json.loads(response[2])['items']),1)
