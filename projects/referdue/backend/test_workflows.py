@@ -84,6 +84,16 @@ class WorkflowTests(unittest.TestCase):
         self.f.notify=original
         self.assertEqual(self.s.ledger('owner',self.a,self.r)['revenue'],0)
 
+    def test_legacy_completion_preserves_identity_and_ledger(self):
+        legacy=self.s.add_referral('owner',self.a,self.q,'Original prospect')
+        self.s.set_terms('owner',self.a,legacy,'fixed','50','INR')
+        self.s.record_payment('owner',self.a,legacy,'revenue','500','legacy-revenue')
+        self.f.submit('owner',self.a,{**self.data,'company':'Other Co','email':'other@example.com','phone':'','confirm_duplicate':True},legacy=legacy)
+        row=self.s.db.execute('SELECT partner,prospect FROM referrals WHERE id=?',(legacy,)).fetchone()
+        self.assertEqual(row,(self.q,'Original prospect'))
+        self.assertEqual(self.s.ledger('owner',self.a,legacy)['revenue'],50000)
+        with self.assertRaises(ValueError): self.f.submit('owner',self.a,self.data,legacy=legacy)
+
     def test_stage_and_term_guards(self):
         with self.assertRaises(ValueError): self.f.stage('owner',self.a,self.r,'Won')
         with self.assertRaises(ValueError): self.f.payment('owner',self.a,self.r,{'kind':'revenue','amount':'1','request_id':'a'})
