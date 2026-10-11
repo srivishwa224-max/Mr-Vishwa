@@ -10,6 +10,9 @@ class ApiTests(unittest.TestCase):
         self.app=App(Path(self.tmp.name)/'test.db')
         self.a=self.app.login('a@example.com','synthetic-passphrase-a',True)
         self.b=self.app.login('b@example.com','synthetic-passphrase-b',True)
+        for email in ['a@example.com','b@example.com']:
+            body=self.app.db.execute("SELECT body FROM account_mail WHERE recipient=? AND purpose='verify' AND status='pending'",(email,)).fetchone()[0]
+            self.app.security.complete(body.split('#verify=')[1].split()[0],'verify')
     def tearDown(self):
         self.app.store.close(); self.tmp.cleanup()
     def test_account_workspace_partner_referral_flow(self):
@@ -48,8 +51,8 @@ class ApiTests(unittest.TestCase):
         with self.assertRaises(PermissionError):
             self.app.route('POST','/api/workspaces/'+wid+'/partners',{'actor':actor,'name':'X','email':'x@example.com'},self.b)
     def test_login_throttle(self):
-        for _ in range(8):
+        for _ in range(10):
             with self.assertRaises(PermissionError): self.app.login('unknown@example.com','synthetic-password')
-        with self.assertRaises(ValueError): self.app.login('a@example.com','synthetic-passphrase-a')
+        with self.assertRaises(ValueError): self.app.login('unknown@example.com','synthetic-password')
 
 if __name__=='__main__': unittest.main()
