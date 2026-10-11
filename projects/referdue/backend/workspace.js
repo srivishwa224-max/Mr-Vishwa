@@ -25,6 +25,8 @@ async function details() {
   list('history',history.items.map(row=>row[3]+' · '+row[1]));
 }
 async function refresh() {
+  const identity=await api('me');
+  if(!identity.verified) { $('auth').hidden=false; $('workspace').hidden=true; $('message').textContent='Verify your email to open your workspace. A link is queued for delivery.'; return; }
   const prior=$('selection').value;
   const result=await api('workspaces');
   $('auth').hidden=true; $('workspace').hidden=false;
@@ -78,11 +80,12 @@ function download(name, content) {
   const link=document.createElement('a'); link.href=url; link.download=name; link.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function click(id, action) { $(id).addEventListener('click',()=>action().catch(error=>$('message').textContent=error.message)); }
-bind('referral',async data=>{
-  let result=await api(workspacePath()+'referrals',data);
+bind('referral',async (data,event)=>{
+  const path=event.submitter.value==='legacy'?ledgerPath()+'details':workspacePath()+'referrals';
+  let result=await api(path,data);
   if(result.duplicates?.length && !result.id) {
     if(!confirm('Possible duplicate: '+result.duplicates.length+' existing record(s). Save another introduction?')) throw new Error('Not saved. Review the existing records.');
-    result=await api(workspacePath()+'referrals',{...data,confirm_duplicate:true});
+    result=await api(path,{...data,confirm_duplicate:true});
   }
   await details();
 });
@@ -120,5 +123,18 @@ const incoming=new URLSearchParams(location.hash.slice(1));
 if(incoming.has('accept') || incoming.has('portal')) {
   $('capability').elements.token.value=incoming.get('accept')||incoming.get('portal');
   $('message').textContent=incoming.has('accept')?'Review the introduction before accepting.':'Choose Open referrer view.';
+  history.replaceState(null,'',location.pathname);
+}
+
+bind('account-request',async (data,event)=>{const result=await api(event.submitter.value,data); $('verification-notice').textContent=result.message;});
+bind('account-complete',async (data,event)=>{
+  const action=event.submitter.value;
+  if(action==='reset-password' && data.password.length<12) throw new Error('Use at least 12 password characters');
+  const result=await api(action,data); $('verification-notice').textContent=result.message;
+  if(action==='reset-password') { $('auth').hidden=false; $('workspace').hidden=true; } else await refresh();
+});
+if(incoming.has('verify')||incoming.has('reset')) {
+  $('account-complete').elements.token.value=incoming.get('verify')||incoming.get('reset');
+  $('verification-notice').textContent=incoming.has('verify')?'Click Verify email to confirm.':'Enter a new password and click Reset password.';
   history.replaceState(null,'',location.pathname);
 }
