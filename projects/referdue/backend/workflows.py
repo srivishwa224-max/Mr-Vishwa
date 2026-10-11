@@ -51,8 +51,11 @@ class Workflows:
         row=self.db.execute('SELECT p.email FROM partners p JOIN referrals r ON p.id=r.partner WHERE r.id=? AND r.workspace=?',(referral,workspace)).fetchone()
         if row: self.db.execute('INSERT INTO outbox(workspace,recipient,event,referral) VALUES(?,?,?,?)',(workspace,row[0],event,referral))
 
-    def submit(self, actor, workspace, data):
+    def submit(self, actor, workspace, data, legacy=None):
         self.s._authorize(actor,workspace)
+        if legacy:
+            self.s._referral_access(actor,workspace,legacy)
+            if self.db.execute('SELECT 1 FROM referral_details WHERE referral=?',(legacy,)).fetchone(): raise ValueError('Details already exist')
         values={key:self.text(data,key,key in ('company','service','introduced')) for key in ('company','email','phone','service','introduced','source','notes')}
         date.fromisoformat(values['introduced'])
         if values['email'] and not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+',values['email']): raise ValueError('Invalid email')
@@ -60,15 +63,15 @@ class Workflows:
         company=self.normalize(values['company']); email=values['email'].casefold(); phone=''.join(c for c in values['phone'] if c.isdigit())
         identity='email:'+email if email else 'phone:'+phone if len(phone)>=7 else 'company:'+company
         existing=self.db.execute('SELECT r.id,d.company,d.email,d.phone FROM referrals r JOIN referral_details d ON r.id=d.referral WHERE r.workspace=?',(workspace,)).fetchall()
-        duplicates=[r[0] for r in existing if self.normalize(r[1])==company or (email and r[2].casefold()==email) or (len(phone)>=7 and ''.join(c for c in r[3] if c.isdigit())==phone)]
+        duplicates=[r[0] for r in existing if r[0]!=legacy and (self.normalize(r[1])==company or (email and r[2].casefold()==email) or (len(phone)>=7 and ''.join(c for c in r[3] if c.isdigit())==phone))]
         if duplicates and data.get('confirm_duplicate') is not True: return {'duplicates':duplicates}
-        partner=self.text(data,'partner',True); prospect=self.text(data,'prospect',True)
-        key=str(uuid.uuid4())
+        partner=self.text(data,'partner',not legacy); prospect=self.text(data,'prospect',not legacy)
+        key=legacy or str(uuid.uuid4())
         with self.db:
-            self.db.execute('INSERT INTO referrals VALUES(?,?,?,?)',(key,workspace,partner,prospect))
+            if not legacy: self.db.execute('INSERT INTO referrals VALUES(?,?,?,?)',(key,workspace,partner,prospect))
             self.db.execute('INSERT INTO referral_details(referral,company,email,phone,service,introduced,source,notes,estimate,identity) VALUES(?,?,?,?,?,?,?,?,?,?)',
                 (key,values['company'],email,values['phone'],values['service'],values['introduced'],values['source'],values['notes'],estimate,identity))
-            self.s._log(actor,workspace,'referral.submitted',key)
+            self.s._log(actor,workspace,'referral.details_completed' if legacy else 'referral.submitted',key)
         return {'id':key,'duplicates':duplicates}
 
     def issue(self, actor, workspace, target, kind):
