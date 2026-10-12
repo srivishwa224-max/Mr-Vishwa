@@ -1,0 +1,82 @@
+name: ReferDue Chromium synthetic check
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ci/referdue-chromium]
+    paths:
+      - '.github/workflows/referdue-chromium.yml'
+      - 'projects/referdue/**'
+  pull_request:
+    paths:
+      - '.github/workflows/referdue-chromium.yml'
+      - 'projects/referdue/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: referdue-chromium-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  chromium:
+    # Standard public-repository Linux runner: no larger runner or paid service.
+    if: github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: projects/referdue
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install only Playwright and Chromium headless shell
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund playwright@1.62.1
+          npx --no-install playwright install --with-deps --only-shell chromium
+      - name: Existing synthetic regression tests
+        run: |
+          python3 -m unittest discover -s backend -p 'test_*.py' -v
+          npm test
+          node --check backend/workspace.js
+          node --check backend/browser_check.cjs
+      - name: Existing browser workflow on disposable loopback server
+        run: |
+          set -euo pipefail
+          umask 077
+          test_dir="$(mktemp -d "${RUNNER_TEMP}/referdue-browser.XXXXXX")"
+          export REFERDUE_TEST_DB="$test_dir/synthetic.sqlite"
+          server_pid=""
+          cleanup() {
+            if [ -n "$server_pid" ]; then
+              kill "$server_pid" 2>/dev/null || true
+              wait "$server_pid" 2>/dev/null || true
+            fi
+            rm -rf "$test_dir"
+          }
+          trap cleanup EXIT
+          python3 backend/server.py --database "$REFERDUE_TEST_DB" --port 4174 > "$test_dir/server.log" 2>&1 &
+          server_pid=$!
+          python3 - <<'PY'
+          import time, urllib.request
+          for attempt in range(50):
+              try:
+                  with urllib.request.urlopen('http://127.0.0.1:4174', timeout=1) as response:
+                      if response.status == 200:
+                          break
+              except OSError:
+                  time.sleep(0.2)
+          else:
+              raise SystemExit('Synthetic loopback server did not become ready')
+          PY
+          timeout 180s node backend/browser_check.cjs
+          printf '%s\n' 'Chromium synthetic workflow passed. Phase 3 remains open; no deployment or release approval.'
