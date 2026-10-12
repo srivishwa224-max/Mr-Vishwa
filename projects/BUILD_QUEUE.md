@@ -39,3 +39,7 @@ Committed email ownership verification, expiring single-use recovery tokens, res
 
 ### Backup and recovery verification — 2026-10-12
 Added a private SQLite backup, integrity-check and restore utility with atomic creation and no-overwrite safeguards. All 42 Python tests passed; both JavaScript syntax checks passed. Playwright is installed but its Chromium executable remains absent, so browser/visual acceptance is still unverified. Phase 3 remains open; next complete browser acceptance in a browser-capable environment and finish release verification. No next project selected.
+
+
+### Concurrent release verification — 2026-10-12 evening
+Added task `referdue/release-concurrency/r1`: 32 synthetic authenticated workspace reads across eight WSGI threads, with exact workspace isolation assertions. Self-test passed; the full Python suite reached 43 tests and both JavaScript syntax checks passed. Submitted for independent Checker review; no Checker verdict was claimed at commit time. This is not a production capacity benchmark. Phase 3 remains open for browser/accessibility and production-host release checks. No next project selected.

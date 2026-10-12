@@ -46,3 +46,7 @@ Freshly read the GitHub queue and original Notion idea. Compared the required co
 
 ## Recovery evidence for 2026-10-12
 Added an integrity-checked SQLite backup/recovery utility and synthetic recovery tests. The tool creates private copies atomically, refuses overwrite, validates backups read-only and rejects corrupt restore sources. This verifies the application-level recovery procedure locally; it does not verify a future host, its permissions, retention, encryption or off-site storage. Those deployment-specific checks remain part of Vishwa's manual release operation.
+
+
+## Concurrent release evidence for 2026-10-12 evening
+Task `referdue/release-concurrency/r1` added a bounded WSGI concurrency smoke test using synthetic data: 32 authenticated workspace reads across eight threads. Self-test passed and the full Python suite reached 43 tests. This submission awaits independent Checker review; it does not establish production capacity or replace browser, accessibility, security or deployment-host testing.

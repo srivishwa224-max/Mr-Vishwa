@@ -1,3 +1,9 @@
+## Concurrent WSGI read verification — 2026-10-12 evening
+- Task ID: `referdue/release-concurrency/r1`; producer: scheduled EO-compatible continuation; status: SUBMITTED / AWAITING_CHECKER at commit time.
+- Added a synthetic concurrency test that registers and verifies an account, creates a workspace, then performs 32 authenticated workspace reads across eight threads through the HTTPS WSGI application.
+- Self-test result: every request returned 200 and the exact authorized workspace; the complete suite reached 43 passing Python tests. Both JavaScript syntax checks passed.
+- This is a bounded concurrency smoke check, not a capacity benchmark, denial-of-service assessment or production-host load test. Browser acceptance remains open.
+
 ## Backup and recovery update — 2026-10-12
 - Added `backend/backup.py`, a standard-library operator tool for online SQLite backups, read-only integrity checks and restore into a new path. It never overwrites an existing backup or live database, verifies the copy before publishing it and restricts new database files to owner read/write permissions on supported systems.
 - Verified a synthetic backup and recovery round trip, preserved committed data, rejected overwrite attempts and rejected a corrupt source without creating a destination. This closes the missing built-in recovery-tool gap, but an operator should still rehearse recovery on the real deployment host after deployment is approved.
