@@ -42,3 +42,7 @@ No paid infrastructure, live connections, credentials, real customer data, partn
 
 ## Review evidence for 2026-10-10
 Freshly read the GitHub queue and original Notion idea. Compared the required core feature list against the prior recorded handoff. This was scope reconciliation, not a code test run. No application changes or new test passes claimed. Prior 13-test pass belongs to 2026-10-09.
+
+
+## Recovery evidence for 2026-10-12
+Added an integrity-checked SQLite backup/recovery utility and synthetic recovery tests. The tool creates private copies atomically, refuses overwrite, validates backups read-only and rejects corrupt restore sources. This verifies the application-level recovery procedure locally; it does not verify a future host, its permissions, retention, encryption or off-site storage. Those deployment-specific checks remain part of Vishwa's manual release operation.

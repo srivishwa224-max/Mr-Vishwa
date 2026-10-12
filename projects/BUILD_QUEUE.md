@@ -35,3 +35,7 @@ Implemented full referral capture and duplicate warnings, expiring acceptance li
 
 ### Account security and preservation — 2026-10-11
 Committed email ownership verification, expiring single-use recovery tokens, reset session revocation, persistent request throttles, an HTTPS-only WSGI boundary, corresponding UI and tests, and legacy backend detail completion preserving ledger/identity. All 39 Python tests passed; workspace and browser-test JavaScript syntax passed. No live services or deployment. Phase 3 remains open: browser acceptance and release verification remain unproven; see CURRENT_HANDOFF.md. No next project selected.
+
+
+### Backup and recovery verification — 2026-10-12
+Added a private SQLite backup, integrity-check and restore utility with atomic creation and no-overwrite safeguards. All 42 Python tests passed; both JavaScript syntax checks passed. Playwright is installed but its Chromium executable remains absent, so browser/visual acceptance is still unverified. Phase 3 remains open; next complete browser acceptance in a browser-capable environment and finish release verification. No next project selected.

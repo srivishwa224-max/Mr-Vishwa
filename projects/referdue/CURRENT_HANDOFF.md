@@ -1,3 +1,10 @@
+## Backup and recovery update — 2026-10-12
+- Added `backend/backup.py`, a standard-library operator tool for online SQLite backups, read-only integrity checks and restore into a new path. It never overwrites an existing backup or live database, verifies the copy before publishing it and restricts new database files to owner read/write permissions on supported systems.
+- Verified a synthetic backup and recovery round trip, preserved committed data, rejected overwrite attempts and rejected a corrupt source without creating a destination. This closes the missing built-in recovery-tool gap, but an operator should still rehearse recovery on the real deployment host after deployment is approved.
+- Private-path usage: `python backup.py backup /private/live.sqlite /private/backups/referdue-YYYY-MM-DD.sqlite`; `python backup.py check /private/backups/referdue-YYYY-MM-DD.sqlite`; `python backup.py restore /private/backups/referdue-YYYY-MM-DD.sqlite /private/recovery-test.sqlite`.
+- Stop the application and notification worker before replacing a live database. Restore intentionally refuses replacement; promoting a verified recovery file remains a manual deployment operation.
+- Actual verification: 42 Python tests pass and both JavaScript syntax checks pass. Browser acceptance remains open because the Playwright Chromium executable is still absent.
+
 ## Account and security update — 2026-10-11
 This section supersedes the older account-security and legacy-record gaps below.
 - Email verification is required before workspace access. Verification and reset links expire after 30 minutes and are single-use; reissue invalidates old links. Reset revokes all sessions. Account responses never return a token.
