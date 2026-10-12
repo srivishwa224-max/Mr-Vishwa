@@ -43,3 +43,7 @@ Added a private SQLite backup, integrity-check and restore utility with atomic c
 
 ### Concurrent release verification — 2026-10-12 evening
 Added task `referdue/release-concurrency/r1`: 32 synthetic authenticated workspace reads across eight WSGI threads, with exact workspace isolation assertions. Self-test passed; the full Python suite reached 43 tests and both JavaScript syntax checks passed. Submitted for independent Checker review; no Checker verdict was claimed at commit time. This is not a production capacity benchmark. Phase 3 remains open for browser/accessibility and production-host release checks. No next project selected.
+
+
+### Checker reconciliation — release concurrency r1 — 2026-10-12
+Independent Checker issued PASS for commit `bc3e3542030dacf7c257e7795f8e43ee1a606ed3`: targeted concurrency test reproduced, all 43 backend tests passed, and 20 repeated targeted runs covered 640 authenticated reads without failure. Task `referdue/release-concurrency/r1` is READY_FOR_NEXT. Phase 3 remains open for browser/accessibility and production-host release checks; this is not overall release readiness. No next project selected.

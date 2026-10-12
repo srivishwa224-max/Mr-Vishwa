@@ -1,3 +1,9 @@
+## Checker result — referdue/release-concurrency/r1 — 2026-10-12
+- Independent Checker retrieved commit `bc3e3542030dacf7c257e7795f8e43ee1a606ed3`, reproduced the targeted test and all 43 backend tests, and issued PASS.
+- Checker also repeated the targeted test 20 times; all passed, covering 640 authenticated reads.
+- Task state: PASS / READY_FOR_NEXT. Scope remains a synthetic concurrency smoke check only, not production capacity or overall release readiness.
+- Immutable record: `CHECKER_RELEASE_CONCURRENCY_R1.md`.
+
 ## Concurrent WSGI read verification — 2026-10-12 evening
 - Task ID: `referdue/release-concurrency/r1`; producer: scheduled EO-compatible continuation; status: SUBMITTED / AWAITING_CHECKER at commit time.
 - Added a synthetic concurrency test that registers and verifies an account, creates a workspace, then performs 32 authenticated workspace reads across eight threads through the HTTPS WSGI application.
