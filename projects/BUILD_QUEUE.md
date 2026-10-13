@@ -10,7 +10,7 @@ This file tracks the sequential three-phase build automation. The Idea Vault is 
 - Phase 2: Complete on 2026-10-08. Added deal statuses, duplicate warnings, a local commission ledger with partial payments, and a referrer filter preview. Eight core tests pass. Referrer filtering is not access control.
 - Phase 3: In progress on 2026-10-09. Fixed missing DOM counter, fixed commission timing, failed-save state handling and malformed-storage preservation; added amount validation and duplicate-confirmation reset. All 13 regression tests and both module syntax checks pass. Browser acceptance could not run: Chromium executable missing. See `projects/referdue/HANDOFF.md` for verification, recovery, product gaps and manual handoff.
 - Scope correction 2026-10-10: Vishwa requires the full core app before moving to another project. Prototype test success alone is insufficient. See `projects/referdue/FULL_APP_COMPLETION.md` for the source-backed requirements and verification gates.
-- Next: Resolve the engineering and browser acceptance gates in `projects/referdue/CURRENT_HANDOFF.md`. Vishwa authorized autonomous continuation; do not wait for repeated approval. Phase 3 stays open. Live credentials, spending, real data and deployment remain manual handoff gates.
+- Next: Complete responsive visual/accessibility review and production-host release verification in `projects/referdue/CURRENT_HANDOFF.md`. Synthetic Chromium end-to-end testing is independently verified. Vishwa authorized autonomous continuation; Phase 3 stays open. Live credentials, spending, real data and deployment remain manual handoff gates.
 - Do not start another project until Phase 3 is complete.
 
 ## After ReferDue
@@ -47,3 +47,7 @@ Added task `referdue/release-concurrency/r1`: 32 synthetic authenticated workspa
 
 ### Checker reconciliation — release concurrency r1 — 2026-10-12
 Independent Checker issued PASS for commit `bc3e3542030dacf7c257e7795f8e43ee1a606ed3`: targeted concurrency test reproduced, all 43 backend tests passed, and 20 repeated targeted runs covered 640 authenticated reads without failure. Task `referdue/release-concurrency/r1` is READY_FOR_NEXT. Phase 3 remains open for browser/accessibility and production-host release checks; this is not overall release readiness. No next project selected.
+
+
+### Chromium CI state reconciliation — 2026-10-13
+Recognized newer CAM/EO/Checker evidence from task `referdue/chromium-ci/r1`. The free GitHub Actions workflow passed on 2026-10-12: 43 Python tests, 13 Node tests, JavaScript syntax checks and the full synthetic Chromium journey passed. Independent Checker verdict: PASS; implementation commit `5a5b03bc81ead5d46c4fd1cc0db7fd5add2ab52e`, successful run `38274609227`, installed merge commit `a253cd3b830a3ff54d5f8affed5f195c6a93925b`. The former “Chromium unavailable” blocker is historical and closed. Phase 3 remains open for responsive visual/accessibility review, production HTTPS/live-service verification and Vishwa’s release approval. No next project selected.

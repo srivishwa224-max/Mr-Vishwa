@@ -54,3 +54,7 @@ Task `referdue/release-concurrency/r1` added a bounded WSGI concurrency smoke te
 
 ## Independent Checker verdict — referdue/release-concurrency/r1
 Checker verdict: **PASS** for revision 1 at commit `bc3e3542030dacf7c257e7795f8e43ee1a606ed3`. The Checker reproduced the targeted test, all 43 backend tests, and 20 repeated targeted runs covering 640 authenticated reads. This closes the bounded WSGI read-concurrency task only. Browser, accessibility, production-capacity, security and deployment-host gates remain open.
+
+
+## Chromium CI evidence — reconciled 2026-10-13
+Task `referdue/chromium-ci/r1` received an actual independent Checker PASS. Successful GitHub Actions run `38274609227` executed 43 Python tests, 13 Node tests, JavaScript syntax checks and the existing synthetic Chromium workflow covering the core local journey through reload. Implementation commit: `5a5b03bc81ead5d46c4fd1cc0db7fd5add2ab52e`; installed merge commit: `a253cd3b830a3ff54d5f8affed5f195c6a93925b`. Browser execution is now verified for the synthetic loopback workflow. Responsive layout/accessibility assertions, production HTTPS hosting, live integrations, deployment and user validation remain open, so this is not overall release readiness.
