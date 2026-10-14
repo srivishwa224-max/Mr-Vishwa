@@ -58,3 +58,7 @@ Checker verdict: **PASS** for revision 1 at commit `bc3e3542030dacf7c257e7795f8e
 
 ## Chromium CI evidence — reconciled 2026-10-13
 Task `referdue/chromium-ci/r1` received an actual independent Checker PASS. Successful GitHub Actions run `38274609227` executed 43 Python tests, 13 Node tests, JavaScript syntax checks and the existing synthetic Chromium workflow covering the core local journey through reload. Implementation commit: `5a5b03bc81ead5d46c4fd1cc0db7fd5add2ab52e`; installed merge commit: `a253cd3b830a3ff54d5f8affed5f195c6a93925b`. Browser execution is now verified for the synthetic loopback workflow. Responsive layout/accessibility assertions, production HTTPS hosting, live integrations, deployment and user validation remain open, so this is not overall release readiness.
+
+
+## Responsive/accessibility smoke evidence — 2026-10-14
+Task `referdue/responsive-accessibility/r1` received an independent Checker PASS at merged commit `1de3c15af5642d4c614d7606547e50236d34b2c1`. GitHub Actions run `38564402199` passed 43 Python tests, 13 Node tests, both JavaScript syntax checks and a real Chromium journey with bounded desktop/mobile fit, accessible-name, language, viewport, heading, live-region and keyboard-focus assertions. This closes the approved smoke-check task only. Full WCAG/assistive-technology coverage, multiple browsers/devices, production HTTPS/live services, deployment and user validation remain open; ReferDue is implemented and self-tested with independently verified bounded tasks, but is not deployed or production-ready.
