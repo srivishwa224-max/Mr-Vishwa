@@ -3,12 +3,60 @@ const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const {execFileSync}=require('node:child_process');
 if(!process.env.REFERDUE_TEST_DB) throw new Error('Set REFERDUE_TEST_DB to the fresh disposable database used by the test server');
+
+async function assertAccessibleViewport(page, label) {
+  const result=await page.evaluate(() => {
+    const visible=element => {
+      const style=getComputedStyle(element);
+      const box=element.getBoundingClientRect();
+      return style.visibility!=='hidden' && style.display!=='none' && box.width>0 && box.height>0;
+    };
+    const accessibleName=element => {
+      if(element.getAttribute('aria-label')?.trim()) return element.getAttribute('aria-label').trim();
+      const labelledBy=element.getAttribute('aria-labelledby');
+      if(labelledBy) return labelledBy.split(/\s+/).map(id=>document.getElementById(id)?.textContent||'').join(' ').trim();
+      if(element.labels?.length) return [...element.labels].map(item=>item.textContent||'').join(' ').trim();
+      return (element.textContent||element.value||element.title||'').trim();
+    };
+    const unnamed=[...document.querySelectorAll('button,input,select,textarea,a[href]')]
+      .filter(visible).filter(element=>!accessibleName(element))
+      .map(element=>element.outerHTML.slice(0,160));
+    return {
+      language:document.documentElement.lang,
+      viewportMeta:document.querySelector('meta[name="viewport"]')?.content||'',
+      unnamed,
+      horizontalOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
+      headings:[...document.querySelectorAll('h1')].filter(visible).length,
+      liveStatus:document.querySelector('#message')?.getAttribute('role')||''
+    };
+  });
+  assert.equal(result.language,'en',`${label}: document language must be declared`);
+  assert.match(result.viewportMeta,/width=device-width/,`${label}: responsive viewport metadata is required`);
+  assert.deepEqual(result.unnamed,[],`${label}: every visible control needs an accessible name`);
+  assert.ok(result.horizontalOverflow<=1,`${label}: page overflows horizontally by ${result.horizontalOverflow}px`);
+  assert.equal(result.headings,1,`${label}: exactly one visible level-one heading is required`);
+  assert.equal(result.liveStatus,'status',`${label}: save/error messages need a status live region`);
+}
+
+async function assertKeyboardFocus(page,label) {
+  await page.locator('body').press('Tab');
+  const focus=await page.evaluate(() => {
+    const active=document.activeElement;
+    const style=getComputedStyle(active);
+    return {tag:active?.tagName||'', outline:style.outlineStyle, width:style.outlineWidth, shadow:style.boxShadow};
+  });
+  assert.ok(['A','BUTTON','INPUT','SELECT','TEXTAREA'].includes(focus.tag),`${label}: Tab must reach an interactive control`);
+  assert.ok(focus.outline!=='none' || focus.width!=='0px' || focus.shadow!=='none',`${label}: keyboard focus indicator must remain visible`);
+}
+
 (async () => {
   const browser = await chromium.launch({headless:true});
   try {
     const page = await browser.newPage();
     const errors=[]; page.on('pageerror',error=>errors.push(error.message));
     await page.goto('http://127.0.0.1:4174');
+    await assertAccessibleViewport(page,'desktop account screen');
+    await assertKeyboardFocus(page,'desktop account screen');
     const email=`sample-${Date.now()}@example.com`;
     await page.locator('#login [name=email]').fill(email);
     await page.locator('#login [name=password]').fill('Synthetic-test-passphrase-only');
@@ -59,7 +107,9 @@ if(!process.env.REFERDUE_TEST_DB) throw new Error('Set REFERDUE_TEST_DB to the f
     await page.reload();
     await page.waitForFunction(()=>document.querySelector('#ledger-summary').textContent.includes('Commission Paid'));
     await page.setViewportSize({width:390,height:844});
+    await assertAccessibleViewport(page,'mobile completed workspace');
+    await assertKeyboardFocus(page,'mobile completed workspace');
     assert.deepEqual(errors,[]);
-    console.log('Browser workflow passed: account → introduction → acceptance → revenue → approval → payment → reload.');
+    console.log('Browser workflow passed: account → introduction → acceptance → revenue → approval → payment → reload; desktop/mobile accessibility smoke checks passed.');
   } finally { await browser.close(); }
 })().catch(error=>{console.error(error);process.exitCode=1;});
