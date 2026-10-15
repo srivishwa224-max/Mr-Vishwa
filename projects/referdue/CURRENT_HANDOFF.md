@@ -1,3 +1,11 @@
+# Current coordination checkpoint — 2026-10-15
+
+ReferDue remains in Phase 3. The latest bounded browser/accessibility Checker PASS below stands; older Chromium-unavailable statements are historical, not current blockers. No new code or tests were executed for this documentation checkpoint.
+
+Next safe unit: reconcile each required core acceptance criterion in FULL_APP_COMPLETION.md with current implementation and named tests, distinguishing verified requirements, unverified requirements and future backlog. The original table is a dated baseline, not evidence that subsequently implemented features are still absent. Do not declare development complete until that mapping supports it.
+
+CAM/Vishwa alone activates the next project. At verified completion, hand off and stop; do not follow the historical automatic-selection procedure. Live services, credentials, spending, production deployment and final approval remain reserved for Vishwa. No new Checker verdict is claimed for this documentation-only update.
+
 ## Responsive/accessibility smoke Checker result — 2026-10-14
 - Task `referdue/responsive-accessibility/r1` is PASS / READY_FOR_NEXT at merged commit `1de3c15af5642d4c614d7606547e50236d34b2c1`.
 - Successful run [38564402199](https://github.com/srivishwa224-max/Mr-Vishwa/actions/runs/38564402199) executed 43 Python tests, 13 Node tests, both JavaScript syntax checks and the real Chromium journey on a disposable loopback database.
