@@ -2,6 +2,15 @@
 
 This file tracks the sequential three-phase build automation. The Idea Vault is a read-only source for idea ordering and current-project exclusions; never edit it.
 
+## Current coordination rule — 2026-10-15
+This section supersedes the historical automatic-selection instruction below. CAM controls project activation. Continue only unresolved approved ReferDue work. After evidence-backed completion, hand off for CAM/Vishwa review and STOP; do not independently choose or activate another product. Without an explicitly selected next project, report `AWAITING NEXT PROJECT SELECTION`. The bottom-up idea-selection procedure applies only after new explicit authorization to this worker.
+
+Current verified baseline: bounded Chromium workflow and responsive/accessibility smoke tasks have recorded independent Checker PASS (latest evidence: commit `fe61439f60df2648312ec054ac711d10273015be`, run `38564402199`). These do not establish full accessibility, release readiness, deployment or user validation. Phase 3 remains open.
+
+Next safe task: map the remaining core acceptance criteria to current implementation and test evidence before requesting release approval. Do not treat every unperformed optional audit as approved new scope; separate required gaps from future work. Production-host checks, credentials, live SMTP and deployment remain approval-gated.
+
+Documentation reconciliation only on 2026-10-15: inspected queue, current handoff, completion gate and latest Notion report. No code changes, test execution, new Checker verdict, deployment or project activation.
+
 ## Current project
 - Name: ReferDue
 - Source: Notion page “2026-10-07 — ReferDue”
@@ -13,7 +22,7 @@ This file tracks the sequential three-phase build automation. The Idea Vault is 
 - Next: Complete responsive visual/accessibility review and production-host release verification in `projects/referdue/CURRENT_HANDOFF.md`. Synthetic Chromium end-to-end testing is independently verified. Vishwa authorized autonomous continuation; Phase 3 stays open. Live credentials, spending, real data and deployment remain manual handoff gates.
 - Do not start another project until Phase 3 is complete.
 
-## After ReferDue
+## Historical selection procedure — superseded by current coordination rule
 Choose the bottom-most idea in Notion’s DAILY SAAS IDEA source that is not marked active/current in “Vishwa — Idea Vault” or otherwise identified as an active project. Work one project at a time, with exactly one phase per scheduled run:
 1. Define and build a focused, usable MVP slice.
 2. Complete the core workflow and important edge cases.
