@@ -1,3 +1,9 @@
+# Acceptance audit checkpoint — 2026-10-16
+
+Completed the core requirement-to-code/test evidence map: projects/referdue/ACCEPTANCE_EVIDENCE_2026-10-16.md (audit commit bbd7da629148ee024fa48757f984ba4be2c2adad). Documentation-only review; no tests executed or new Checker verdict. Phase 3 remains open. Existing bounded Checker PASS results are preserved.
+
+Next safe unit: deterministic concurrent competing-acceptance tests with synthetic data, asserting one winner and atomic loser rollback. Existing payment concurrency tests do not prove acceptance concurrency. CAM must resolve stricter later-checklist wording on directory CRUD, versioned terms and recipient identity; this audit does not waive or expand scope. CSV meets the original PDF-or-CSV feature. No project activation or deployment authorized.
+
 # SaaS Project Build Queue
 
 This file tracks the sequential three-phase build automation. The Idea Vault is a read-only source for idea ordering and current-project exclusions; never edit it.
