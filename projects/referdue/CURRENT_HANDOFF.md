@@ -1,3 +1,9 @@
+# Acceptance concurrency PASS — 2026-10-17
+
+Task `referdue/acceptance-concurrency/r1` is independently verified PASS / READY_FOR_NEXT at test commit `eef820e34fe499d44feefc52f863b42a917c0395`. Added `backend/test_acceptance_concurrency.py` under ReferDue; application code unchanged. Self-tests: 2 targeted, 45 Python, 13 Node tests passed; both JavaScript syntax checks passed. Checker independently reproduced 45 backend tests and 100 repetitions of the two-test suite (200 race cases), with no corrections. See `projects/referdue/CHECKER_ACCEPTANCE_CONCURRENCY_R1.md` for the bounded verdict.
+
+This closes the audit's concurrent acceptance evidence gap, not Phase 3 or overall release readiness. Next recommended bounded task: workspace-isolated duplicate-normalization tests from the acceptance audit, subject to CAM coordination. Directory CRUD/versioned terms/recipient identity scope decisions remain with CAM. No browser or live-service checks were rerun today. Credentials, real data, spending, live services and deployment remain approval-gated. No next project activated. Earlier submission states below are historical.
+
 # Acceptance audit checkpoint — 2026-10-16
 
 Completed the core requirement-to-code/test evidence map: ACCEPTANCE_EVIDENCE_2026-10-16.md (audit commit bbd7da629148ee024fa48757f984ba4be2c2adad). Documentation-only review; no tests executed or new Checker verdict. Phase 3 remains open. Existing bounded Checker PASS results are preserved.
