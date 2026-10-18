@@ -1,3 +1,9 @@
+# Duplicate isolation PASS — 2026-10-18
+
+Task `referdue/duplicate-isolation/r1` independently PASS / READY_FOR_NEXT at `0a13cd1511715bd7aa03dcb53639207e8b14527c`. Added five synthetic normalization, no-write and workspace-isolation tests; production code unchanged. Self-test and independent Checker each passed 5 targeted and 50 backend tests; no corrections. See ReferDue's `CHECKER_DUPLICATE_ISOLATION_R1.md`. Earlier submission statuses below are historical.
+
+Phase 3 remains open. Next recommended bounded verification: evidence attachment size boundaries and authorized access/denial cases from the core audit, subject to CAM coordination. Directory CRUD/versioned terms/recipient-identity scope decisions remain unresolved with CAM. No browser, Node, live-service, deployment or load testing performed today. No next project activated. Credentials, real data, spending, live services, deployment and release approval remain reserved for Vishwa.
+
 # Duplicate isolation verification — 2026-10-18
 
 project_id: referdue
