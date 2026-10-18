@@ -1,3 +1,9 @@
+# Duplicate isolation PASS — 2026-10-18
+
+Task `referdue/duplicate-isolation/r1` independently PASS / READY_FOR_NEXT at `0a13cd1511715bd7aa03dcb53639207e8b14527c`. Added five synthetic normalization, no-write and workspace-isolation tests; production code unchanged. Self-test and independent Checker each passed 5 targeted and 50 backend tests; no corrections. See ReferDue's `CHECKER_DUPLICATE_ISOLATION_R1.md`. Earlier submission statuses below are historical.
+
+Phase 3 remains open. Next recommended bounded verification: evidence attachment size boundaries and authorized access/denial cases from the core audit, subject to CAM coordination. Directory CRUD/versioned terms/recipient-identity scope decisions remain unresolved with CAM. No browser, Node, live-service, deployment or load testing performed today. No next project activated. Credentials, real data, spending, live services, deployment and release approval remain reserved for Vishwa.
+
 # Acceptance concurrency PASS — 2026-10-17
 
 Task `referdue/acceptance-concurrency/r1` is independently verified PASS / READY_FOR_NEXT at test commit `eef820e34fe499d44feefc52f863b42a917c0395`. Added `backend/test_acceptance_concurrency.py` under ReferDue; application code unchanged. Self-tests: 2 targeted, 45 Python, 13 Node tests passed; both JavaScript syntax checks passed. Checker independently reproduced 45 backend tests and 100 repetitions of the two-test suite (200 race cases), with no corrections. See `projects/referdue/CHECKER_ACCEPTANCE_CONCURRENCY_R1.md` for the bounded verdict.
