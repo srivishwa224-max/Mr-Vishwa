@@ -1,3 +1,9 @@
+# Attachment boundaries PASS — 2026-10-19
+
+Task `referdue/evidence-boundaries/r1` independently PASS / READY_FOR_NEXT at `8f290c06a5c0b5dcd372beac90fcbf7a888155b7`. Added four synthetic size-boundary, rejected-input and access-isolation tests; no production-code changes. Self-test and independent Checker each passed 4 targeted and 54 backend tests, no corrections. See `CHECKER_EVIDENCE_BOUNDARIES_R1.md` in ReferDue. Earlier submission states below are historical.
+
+Phase 3 remains open. Next recommended bounded work: remaining core submission-validation/state-transition evidence from the acceptance audit, subject to CAM coordination. CAM scope decisions on directory CRUD/versioned terms/recipient identity remain unresolved. Browser download UX, HTTP limits, malware scanning, live services and production readiness are not established by this task. No Node/browser/live-service/deployment tests run today. No next project activated. Credentials, spending, real data, live services, publication/deployment and release approval remain reserved for Vishwa.
+
 # Attachment boundaries — 2026-10-19
 
 project_id: referdue
