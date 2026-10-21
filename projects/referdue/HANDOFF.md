@@ -1,3 +1,10 @@
+# Submission validation checkpoint — 2026-10-21
+
+Task `referdue/submission-validation/r1` revision 2 is independently verified PASS / READY_FOR_NEXT. Application commit: `f6b48310d9b2ce3a0330db5718a094d5f57fb5d2`; test commit: `4130b2ca4d968f6cd6e2947edcfe748343d475de`; Checker record: `CHECKER_SUBMISSION_VALIDATION_R1.md`.
+
+The four-test suite proves normalized persistence of all submission fields, invalid-input no-write behavior, authorization, workspace-partner isolation and validation precedence when duplicate data is present. Checker reproduced all 60 backend tests and the three combined invalid-plus-duplicate probes. Revision 1 failed because duplicate warnings could precede partner/prospect and workspace-partner validation; revision 2 moved those checks ahead of duplicate detection and passed.
+
+This is bounded development evidence, not Phase 3 completion or production readiness. Browser, HTTP end-to-end, live-service, load, accessibility, deployment and production-host checks were not performed for this task. Next action belongs to CAM: resolve or explicitly defer directory CRUD, versioned terms and recipient-identity scope, then assign the next approved release unit. No next project is active.
 # ReferDue review and handoff
 
 ## Status — 2026-10-09
