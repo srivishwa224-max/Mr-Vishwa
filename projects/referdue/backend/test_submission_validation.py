@@ -105,6 +105,21 @@ class SubmissionValidationTests(unittest.TestCase):
             self.workflows.submit("other", self.workspace, self.data)
         self.assertEqual(self.counts(), baseline)
 
+    def test_duplicate_warning_cannot_bypass_required_or_partner_validation(self):
+        self.workflows.submit("owner", self.workspace, self.data)
+        baseline = self.counts()
+        for field, value, error in (
+            ("partner", "", ValueError),
+            ("prospect", " ", ValueError),
+            ("partner", self.other_partner, PermissionError),
+        ):
+            with self.subTest(field=field, value=value):
+                with self.assertRaises(error):
+                    self.workflows.submit(
+                        "owner", self.workspace, {**self.data, field: value}
+                    )
+                self.assertEqual(self.counts(), baseline)
+
         with self.assertRaises(PermissionError):
             self.workflows.submit(
                 "owner", self.workspace, {**self.data, "partner": self.other_partner}
