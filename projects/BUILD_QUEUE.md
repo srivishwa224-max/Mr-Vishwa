@@ -1,3 +1,8 @@
+# Submission validation PASS — 2026-10-21
+
+Task `referdue/submission-validation/r1` revision 2 independently PASS / READY_FOR_NEXT at application commit `f6b48310d9b2ce3a0330db5718a094d5f57fb5d2` and test commit `4130b2ca4d968f6cd6e2947edcfe748343d475de`. Added four submission-validation tests covering exact persisted fields, normalization, invalid no-write cases, authorization and duplicate-warning precedence. The implementation now deliberately denies a foreign-workspace partner before duplicate detection. EO self-tests and Checker independently passed 4 targeted and all 60 backend tests; Checker also reproduced the three r1 failure probes. See `projects/referdue/CHECKER_SUBMISSION_VALIDATION_R1.md`.
+
+Phase 3 remains open. The remaining known items are CAM scope decisions on directory CRUD, versioned terms and recipient identity; do not manufacture further implementation until CAM identifies the next approved unresolved release task. No browser, HTTP end-to-end, live-service, load, accessibility, deployment or production-host checks ran for this unit. No next project activated. Credentials, real data, spending, live services, publication/deployment and final release approval remain reserved for Vishwa.
 # Stage matrix PASS — 2026-10-20
 
 Task `referdue/stage-matrix/r1` independently PASS / READY_FOR_NEXT at `1f7c71fb7f242fd51830ebcdbbdcfa1d847363eb`. Added 45 manual-transition combinations and outsider denial in two test methods. Self-test and independent Checker each passed 2 targeted methods and all 56 backend tests. No corrections or production-code changes. See ReferDue's `CHECKER_STAGE_MATRIX_R1.md`. Earlier submission status below is historical.
