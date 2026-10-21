@@ -66,6 +66,9 @@ class Workflows:
         duplicates=[r[0] for r in existing if r[0]!=legacy and (self.normalize(r[1])==company or (email and r[2].casefold()==email) or (len(phone)>=7 and ''.join(c for c in r[3] if c.isdigit())==phone))]
         if duplicates and data.get('confirm_duplicate') is not True: return {'duplicates':duplicates}
         partner=self.text(data,'partner',not legacy); prospect=self.text(data,'prospect',not legacy)
+        if not legacy and not self.db.execute(
+            'SELECT 1 FROM partners WHERE id=? AND workspace=?',(partner,workspace)
+        ).fetchone(): raise PermissionError('Access denied')
         key=legacy or str(uuid.uuid4())
         with self.db:
             if not legacy: self.db.execute('INSERT INTO referrals VALUES(?,?,?,?)',(key,workspace,partner,prospect))
